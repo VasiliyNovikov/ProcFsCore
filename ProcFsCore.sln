@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcFsCore", "ProcFsCore\ProcFsCore.csproj", "{2EC0D396-6D0E-4209-9607-46CC34A0D662}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcFsCore.Tests", "ProcFsCore.Tests\ProcFsCore.Tests.csproj", "{BAE896BE-44A8-4FC0-9178-6BD809930985}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2EC0D396-6D0E-4209-9607-46CC34A0D662}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2EC0D396-6D0E-4209-9607-46CC34A0D662}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2EC0D396-6D0E-4209-9607-46CC34A0D662}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2EC0D396-6D0E-4209-9607-46CC34A0D662}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BAE896BE-44A8-4FC0-9178-6BD809930985}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAE896BE-44A8-4FC0-9178-6BD809930985}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAE896BE-44A8-4FC0-9178-6BD809930985}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAE896BE-44A8-4FC0-9178-6BD809930985}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
