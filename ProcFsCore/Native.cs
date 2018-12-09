@@ -19,7 +19,7 @@ namespace ProcFsCore
             TicksPerSecond = 2
         }
         
-        [DllImport("libc", SetLastError = true)]
+        [DllImport("libc", EntryPoint = "readlink", SetLastError = true)]
         private static extern IntPtr ReadLink(string path, StringBuilder buffer, IntPtr bufferSize);
 
         public static string ReadLink(string path)
