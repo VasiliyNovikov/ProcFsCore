@@ -1,19 +1,40 @@
+using System;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
-// ReSharper disable InconsistentNaming
+using System.Text;
 
 namespace ProcFsCore
 {
-    internal static class Native
+    public static class Native
     {
-        [DllImport("libc")]
-        public static extern int getpid();
+        [DllImport("libc", EntryPoint = "getpid")]
+        public static extern int GetPid();
 
-        [DllImport("libc", SetLastError = true)]
-        public static extern int sysconf(SysConfName name);
+        [DllImport("libc", EntryPoint = "sysconf", SetLastError = true)]
+        public static extern int SystemConfig(SystemConfigName name);
         
-        public enum SysConfName
+        public enum SystemConfigName
         {
-            _SC_CLK_TCK = 2
+            PageSize = 1,
+            TicksPerSecond = 2
+        }
+        
+        [DllImport("libc", SetLastError = true)]
+        private static extern IntPtr ReadLink(string path, StringBuilder buffer, IntPtr bufferSize);
+
+        public static string ReadLink(string path)
+        {
+            var buffer = new StringBuilder(256);
+            while (true)
+            {
+                var readSize = ReadLink(path, buffer, new IntPtr(buffer.Capacity)).ToInt32();
+                if (readSize < 0)
+                    throw new Win32Exception();
+                if (readSize < buffer.Capacity)
+                    return buffer.ToString(0, readSize);
+
+                buffer.Capacity *= 2;
+            }
         }
     }
 }

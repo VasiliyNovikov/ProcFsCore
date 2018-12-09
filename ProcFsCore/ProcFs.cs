@@ -9,7 +9,7 @@ namespace ProcFsCore
         internal const string RootPath = "/proc";
         private const string StatPath = RootPath + "/stat";
         
-        public static readonly int TicksPerSecond = Native.sysconf(Native.SysConfName._SC_CLK_TCK);
+        public static readonly int TicksPerSecond = Native.SystemConfig(Native.SystemConfigName.TicksPerSecond);
         
         public static DateTime BootTimeUtc
         {

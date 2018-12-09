@@ -6,7 +6,7 @@ namespace ProcFsCore
 {
     public struct Process
     {
-        private static readonly int CurrentPid = Native.getpid();
+        private static readonly int CurrentPid = Native.GetPid();
         
         public int Pid { get; }
         public string Name { get; private set; }
