@@ -1,5 +1,8 @@
 using System;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using DiagnosticsProcess = System.Diagnostics.Process;
 
@@ -98,6 +101,22 @@ namespace ProcFsCore.Tests
             {
                 var process = processes[pi.Pid];
                 VerifyProcess(pi, process);
+            }
+        }
+        
+        [TestMethod]
+        public void Process_Current_OpenFiles_Test()
+        {
+            var pi = Process.Current;
+            var fileName = $"/proc/{pi.Pid}/stat";
+            using (File.OpenRead(fileName))
+            using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
+            {
+                socket.Bind(new IPEndPoint(IPAddress.Any, 12345));
+                var links = pi.OpenFiles.ToList();
+                Assert.IsTrue(links.Any(l => l.Type == LinkType.File && l.Path == fileName));
+                Assert.IsTrue(links.Any(l => l.Type == LinkType.Socket));
+                Assert.IsTrue(links.Any(l => l.Type == LinkType.Anon));
             }
         }
     }

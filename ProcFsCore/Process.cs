@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.IO;
 
 namespace ProcFsCore
@@ -53,6 +54,15 @@ namespace ProcFsCore
                 if (_startTimeUtc == null)
                     _startTimeUtc = ProcFs.BootTimeUtc + TimeSpan.FromSeconds(StartTimeTicks / (double)ProcFs.TicksPerSecond);
                 return _startTimeUtc.Value;
+            }
+        }
+
+        public IEnumerable<Link> OpenFiles
+        {
+            get
+            {
+                foreach (var linkFile in Directory.EnumerateFiles($"{ProcFs.RootPath}/{Pid}/fd"))
+                    yield return Link.Read(linkFile);
             }
         }
         
