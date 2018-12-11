@@ -4,7 +4,7 @@ using System.IO;
 
 namespace ProcFsCore
 {
-    public static class ProcFs
+    public static partial class ProcFs
     {
         internal const string RootPath = "/proc";
         private const string StatPath = RootPath + "/stat";
@@ -41,6 +41,5 @@ namespace ProcFsCore
                     yield return new Process(pid);
             }
         }
-       
     }
 }
