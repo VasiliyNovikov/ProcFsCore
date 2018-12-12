@@ -96,7 +96,7 @@ namespace ProcFsCore
 
                 // (2) name
                 var name = statReader.ReadWord();
-                Name = Utf8SpanReader.Encoding.GetString(name.Slice(1, name.Length - 2));
+                Name = name.Slice(1, name.Length - 2).ToUtf8String();
 
                 // (3) state
                 State = GetProcessState((char) statReader.ReadWord()[0]);
@@ -132,10 +132,10 @@ namespace ProcFsCore
                 statReader.ReadWord();
 
                 // (14) utime
-                UserProcessorTime = statReader.ReadUInt64() / (double) ProcFs.TicksPerSecond;
+                UserProcessorTime = statReader.ReadInt64() / (double) ProcFs.TicksPerSecond;
 
                 // (15) stime
-                KernelProcessorTime = statReader.ReadUInt64() / (double) ProcFs.TicksPerSecond;
+                KernelProcessorTime = statReader.ReadInt64() / (double) ProcFs.TicksPerSecond;
 
                 // (16) cutime
                 statReader.ReadWord();
