@@ -17,7 +17,13 @@ namespace ProcFsCore.Tests
             using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
             {
                 socket.Bind(new IPEndPoint(IPAddress.Any, 12345));
-                var links = Directory.EnumerateFiles($"/proc/{Native.GetPid()}/fd").Select(Native.ReadLink).ToHashSet();
+                var links = Directory.EnumerateFiles($"/proc/{Native.GetPid()}/fd")
+                                     .Select(l =>
+                                     {
+                                         using (var linkBuffer = Native.ReadLink(l))
+                                             return linkBuffer.Span.ToUtf8String();
+                                     })
+                                     .ToHashSet();
                 Assert.IsTrue(links.Contains(fileName));
                 Assert.IsTrue(links.Any(l => l.StartsWith("socket:[")));
             }

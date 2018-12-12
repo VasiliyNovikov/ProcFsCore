@@ -34,8 +34,7 @@ namespace ProcFsCore
                 {
                     try
                     {
-                        using (var cmdLineStream = File.OpenRead($"{ProcFs.RootPath}/{Pid}/cmdline"))
-                        using (var cmdLineBuffer = Buffer.FromStream(cmdLineStream))
+                        using (var cmdLineBuffer = Buffer.FromFile($"{ProcFs.RootPath}/{Pid}/cmdline"))
                         {
                             cmdLineBuffer.Span.Replace('\0', ' ');
                             var cmdLineSpan = cmdLineBuffer.Span.Trim();
@@ -85,8 +84,7 @@ namespace ProcFsCore
         {
             _commandLine = null;
             _startTimeUtc = null;
-            using (var statStream = File.OpenRead($"{ProcFs.RootPath}/{Pid}/stat"))
-            using (var statStr = Buffer.FromStream(statStream))
+            using (var statStr = Buffer.FromFile($"{ProcFs.RootPath}/{Pid}/stat"))
             {
                 // See http://man7.org/linux/man-pages/man5/proc.5.html /proc/[pid]/stat section
                 var statReader = new Utf8SpanReader(statStr.Span);

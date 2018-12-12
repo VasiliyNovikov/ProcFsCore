@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -9,26 +8,9 @@ using DiagnosticsProcess = System.Diagnostics.Process;
 namespace ProcFsCore.Tests
 {
     [TestClass]
-    public class ProcessTests
+    public class ProcessTests : ProcFsTestsBase
     {
         private const double CpuError = 0.01;
-
-        private static void RetryOnAssert(Action action, int count = 3)
-        {
-            for (var i = 0; i < count - 1; i++)
-            {
-                try
-                {
-                    action();
-                    return;
-                }
-                catch (AssertFailedException)
-                {
-                }
-            }
-            
-            action();
-        }
 
         private static void VerifyProcess(Process p, DiagnosticsProcess process)
         {

@@ -1,7 +1,6 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace ProcFsCore
 {
@@ -20,20 +19,27 @@ namespace ProcFsCore
         }
         
         [DllImport("libc", EntryPoint = "readlink", SetLastError = true)]
-        private static extern IntPtr ReadLink(string path, StringBuilder buffer, IntPtr bufferSize);
+        private static extern unsafe IntPtr ReadLink(string path, byte* buffer, IntPtr bufferSize);
 
-        public static string ReadLink(string path)
+        public static unsafe Buffer ReadLink(string path)
         {
-            var buffer = new StringBuilder(256);
+            var buffer = new Buffer(Buffer.MinimumCapacity);
             while (true)
             {
-                var readSize = ReadLink(path, buffer, new IntPtr(buffer.Capacity)).ToInt32();
-                if (readSize < 0)
-                    throw new Win32Exception();
-                if (readSize < buffer.Capacity)
-                    return buffer.ToString(0, readSize);
+                fixed (byte* bufferPtr = &buffer.Span.GetPinnableReference())
+                {
 
-                buffer.Capacity *= 2;
+                    var readSize = ReadLink(path, bufferPtr, new IntPtr(buffer.Length)).ToInt32();
+                    if (readSize < 0)
+                        throw new Win32Exception();
+                    if (readSize < buffer.Length)
+                    {
+                        buffer.Resize(readSize);
+                        return buffer;
+                    }
+                }
+
+                buffer.Resize(buffer.Length * 2);
             }
         }
     }

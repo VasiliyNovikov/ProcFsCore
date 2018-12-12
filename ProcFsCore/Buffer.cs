@@ -9,7 +9,9 @@ namespace ProcFsCore
         public const int MinimumCapacity = 512;
 
         private byte[] _rentedBuffer;
+#pragma warning disable 649
         private fixed byte _fixedBuffer[MinimumCapacity];
+#pragma warning restore 649
 
         public int Length { get; private set; }
 
@@ -64,7 +66,6 @@ namespace ProcFsCore
             Length = 0;
         }
 
-
         public static Buffer FromStream(Stream stream, int? estimatedLength = null)
         {
             var actualEstimatedLength = estimatedLength ?? (stream.CanSeek ? (int)stream.Length : MinimumCapacity);
@@ -85,6 +86,12 @@ namespace ProcFsCore
             }
             buffer.Resize(totalReadBytes);
             return buffer;
+        }
+
+        public static Buffer FromFile(string fileName, int? estimatedLength = null)
+        {
+            using (var stream = File.OpenRead(fileName))
+                return FromStream(stream, estimatedLength);
         }
     }
 }

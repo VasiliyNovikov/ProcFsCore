@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Text;
 
 namespace ProcFsCore
 {
@@ -15,19 +16,32 @@ namespace ProcFsCore
             INode = iNode;
         }
 
+        private static ReadOnlyMemory<byte> socketLinkStart = "socket:[".ToUtf8();
+        private static ReadOnlyMemory<byte> pipeLinkStart = "pipe:[".ToUtf8();
+        private static ReadOnlyMemory<byte> anonLinkStart = "anon_inode:[".ToUtf8();
+        
         public static Link Read(string linkPath)
         {
-            var linkText = Native.ReadLink(linkPath);
-            const string socketLinkStart = "socket:[";
-            const string pipeLinkStart = "pipe:[";
-            const string anonLinkStart = "anon_inode:[";
-            if (linkText.StartsWith(socketLinkStart))
-                return new Link(LinkType.Socket, null, Int32.Parse(linkText.AsSpan(socketLinkStart.Length, linkText.Length - socketLinkStart.Length - 1)));
-            if (linkText.StartsWith(pipeLinkStart))
-                return new Link(LinkType.Pipe, null, Int32.Parse(linkText.AsSpan(pipeLinkStart.Length, linkText.Length - pipeLinkStart.Length - 1)));
-            if (linkText.StartsWith(anonLinkStart))
-                return new Link(LinkType.Anon, linkText.Substring(anonLinkStart.Length, linkText.Length - anonLinkStart.Length - 1), 0);
-            return new Link(LinkType.File, linkText, 0);
+            using (var linkTextBuffer = Native.ReadLink(linkPath))
+            {
+                var linkText = linkTextBuffer.Span;
+                if (linkText.StartsWith(socketLinkStart.Span))
+                {
+                    Utf8Parser.TryParse(linkText.Slice(socketLinkStart.Length, linkText.Length - socketLinkStart.Length - 1), out int iNode, out _);
+                    return new Link(LinkType.Socket, null, iNode);
+                }
+
+                if (linkText.StartsWith(pipeLinkStart.Span))
+                {
+                    Utf8Parser.TryParse(linkText.Slice(pipeLinkStart.Length, linkText.Length - pipeLinkStart.Length - 1), out int iNode, out _);
+                    return new Link(LinkType.Pipe, null, iNode);
+                }
+
+                if (linkText.StartsWith(anonLinkStart.Span))
+                    return new Link(LinkType.Anon, linkText.Slice(anonLinkStart.Length, linkText.Length - anonLinkStart.Length - 1).ToUtf8String(), 0);
+
+                return new Link(LinkType.File, linkText.ToUtf8String(), 0);
+            }
         }
 
         public override string ToString() => $"{Type}:[{Path ?? INode.ToString()}]";
