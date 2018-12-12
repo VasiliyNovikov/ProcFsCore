@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 
@@ -35,10 +34,17 @@ namespace ProcFsCore
                 {
                     try
                     {
-                        _commandLine = File.ReadAllText($"{ProcFs.RootPath}/{Pid}/cmdline").Replace('\0', ' ').Trim();
+                        using (var cmdLineStream = File.OpenRead($"{ProcFs.RootPath}/{Pid}/cmdline"))
+                        using (var cmdLineBuffer = Buffer.FromStream(cmdLineStream))
+                        {
+                            cmdLineBuffer.Span.Replace('\0', ' ');
+                            var cmdLineSpan = cmdLineBuffer.Span.Trim();
+                            _commandLine = cmdLineSpan.IsEmpty ? "" : cmdLineSpan.ToUtf8String();
+                        }
                     }
                     catch (IOException)
                     {
+                        _commandLine = "";
                     }
                 }
 
@@ -79,106 +85,84 @@ namespace ProcFsCore
         {
             _commandLine = null;
             _startTimeUtc = null;
-            Span<byte> statStr = stackalloc byte[512];
-            byte[] statBuffer = null;
-            var statLength = 0;
-            try
+            using (var statStream = File.OpenRead($"{ProcFs.RootPath}/{Pid}/stat"))
+            using (var statStr = Buffer.FromStream(statStream))
             {
-                using (var statStream = File.OpenRead($"{ProcFs.RootPath}/{Pid}/stat"))
-                {
-                    while (true)
-                    {
-                        var readBytes = statStream.Read(statStr.Slice(statLength));
-                        statLength += readBytes;
-                        if (statLength <= statStr.Length)
-                            break;
-                        statBuffer = ArrayPool<byte>.Shared.Rent(statStr.Length * 2);
-                        statStr.CopyTo(statBuffer);
-                        statStr = statBuffer;
-                    }
-                }
-                
                 // See http://man7.org/linux/man-pages/man5/proc.5.html /proc/[pid]/stat section
-                statStr = statStr.Slice(0, statLength);
-                var statReader = new Utf8SpanReader(statStr);
-                
+                var statReader = new Utf8SpanReader(statStr.Span);
+
                 // (1) pid
                 statReader.ReadWord();
-                
+
                 // (2) name
                 var name = statReader.ReadWord();
                 Name = Utf8SpanReader.Encoding.GetString(name.Slice(1, name.Length - 2));
-                
+
                 // (3) state
-                State = GetProcessState((char)statReader.ReadWord()[0]);
-                
+                State = GetProcessState((char) statReader.ReadWord()[0]);
+
                 // (4) ppid
                 ParentPid = statReader.ReadInt32();
-                
+
                 // (5) pgrp
                 GroupId = statReader.ReadInt32();
-                
+
                 // (6) session
                 SessionId = statReader.ReadInt32();
-                
+
                 // (7) tty_nr
                 statReader.ReadWord();
-                
+
                 // (8) tpgid
                 statReader.ReadWord();
-                
+
                 // (9) flags
                 statReader.ReadWord();
-                
+
                 // (10) minflt
                 MinorFaults = statReader.ReadInt64();
-                
+
                 // (11) cminflt
                 statReader.ReadWord();
-                
+
                 // (12) majflt
                 MajorFaults = statReader.ReadInt64();
-                
+
                 // (13) cmajflt
                 statReader.ReadWord();
-                
+
                 // (14) utime
-                UserProcessorTime = statReader.ReadUInt64() / (double)ProcFs.TicksPerSecond;
-                
+                UserProcessorTime = statReader.ReadUInt64() / (double) ProcFs.TicksPerSecond;
+
                 // (15) stime
-                KernelProcessorTime = statReader.ReadUInt64() / (double)ProcFs.TicksPerSecond;
-                
+                KernelProcessorTime = statReader.ReadUInt64() / (double) ProcFs.TicksPerSecond;
+
                 // (16) cutime
                 statReader.ReadWord();
-                
+
                 // (17) cstime
                 statReader.ReadWord();
-                
+
                 // (18) priority
                 Priority = statReader.ReadInt16();
-                
+
                 // (19) nice
                 Nice = statReader.ReadInt16();
-                
+
                 // (20) num_threads
                 ThreadCount = statReader.ReadInt32();
-                
+
                 // (21) itrealvalue
                 statReader.ReadWord();
-                
+
                 // (22) starttime
                 StartTimeTicks = statReader.ReadInt64();
-                
+
                 // (23) vsize
                 VirtualMemorySize = statReader.ReadInt64();
-                
+
                 // (24) rss
                 ResidentSetSize = statReader.ReadInt64() * Environment.SystemPageSize;
-            }
-            finally
-            {
-                if (statBuffer != null)
-                    ArrayPool<byte>.Shared.Return(statBuffer);
             }
         }
 

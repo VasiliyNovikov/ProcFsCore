@@ -65,9 +65,26 @@ namespace ProcFsCore
         }
 
 
-        public static Buffer FromStream(Stream stream, int estimatedLength = MinimumCapacity)
+        public static Buffer FromStream(Stream stream, int? estimatedLength = null)
         {
-            throw new NotImplementedException();
+            var actualEstimatedLength = estimatedLength ?? (stream.CanSeek ? (int)stream.Length : MinimumCapacity);
+            if (actualEstimatedLength == 0)
+                actualEstimatedLength = MinimumCapacity;
+            
+            var buffer = new Buffer(actualEstimatedLength);
+            var totalReadBytes = 0;
+            while (true)
+            {
+                var readBytes = stream.Read(buffer.Span.Slice(totalReadBytes));
+                if (readBytes == 0)
+                    break;
+                
+                totalReadBytes += readBytes;
+                if (totalReadBytes == buffer.Length)
+                    buffer.Resize(buffer.Length * 2);
+            }
+            buffer.Resize(totalReadBytes);
+            return buffer;
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers.Text;
 using System.Collections.Generic;
 using System.IO;
 
@@ -10,7 +11,8 @@ namespace ProcFsCore
         private const string StatPath = RootPath + "/stat";
         
         public static readonly int TicksPerSecond = Native.SystemConfig(Native.SystemConfigName.TicksPerSecond);
-        
+
+        private static readonly ReadOnlyMemory<byte> BtimeStr = "\nbtime ".ToUtf8();
         public static DateTime BootTimeUtc
         {
             get
@@ -18,16 +20,19 @@ namespace ProcFsCore
                 // '/proc/stat -> btime' gets the boot time.
                 // btime is the time of system boot in seconds since the Unix epoch.
                 // It includes suspended time and is updated based on the system time (settimeofday).
-                var text = File.ReadAllText(StatPath);
-                var btimeLineStart = text.IndexOf("\nbtime ", StringComparison.OrdinalIgnoreCase);
-                if (btimeLineStart >= 0)
+                using (var statStream = File.OpenRead(StatPath))
+                using (var statBuffer = Buffer.FromStream(statStream))
                 {
-                    var btimeStart = btimeLineStart + "\nbtime ".Length;
-                    var btimeEnd = text.IndexOf('\n', btimeStart);
-                    if (btimeEnd > btimeStart && Int64.TryParse(text.AsSpan(btimeStart, btimeEnd - btimeStart), out var bootTimeSeconds))
-                        return DateTime.UnixEpoch + TimeSpan.FromSeconds(bootTimeSeconds);
+                    var btimeLineStart = statBuffer.Span.IndexOf(BtimeStr.Span);
+                    if (btimeLineStart >= 0)
+                    {
+                        var btimeStart = btimeLineStart + BtimeStr.Length;
+                        var btimeEnd = statBuffer.Span.IndexOf('\n', btimeStart);
+                        if (btimeEnd > btimeStart && Utf8Parser.TryParse(statBuffer.Span.Slice(btimeStart, btimeEnd - btimeStart), out long bootTimeSeconds, out _))
+                            return DateTime.UnixEpoch + TimeSpan.FromSeconds(bootTimeSeconds);
+                    }
                 }
-                
+
                 throw new NotSupportedException();
             }
         }
