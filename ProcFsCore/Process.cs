@@ -7,23 +7,160 @@ namespace ProcFsCore
     public struct Process
     {
         private static readonly int CurrentPid = Native.GetPid();
+
+        private bool _initialized;
         
         public int Pid { get; }
-        public string Name { get; private set; }
-        public ProcessState State { get; private set; }
-        public int ParentPid { get; private set; }
-        public int GroupId { get; private set; }
-        public int SessionId { get; private set; }
-        public long MinorFaults { get; private set; }
-        public long MajorFaults { get; private set; }
-        public double UserProcessorTime { get; private set; }
-        public double KernelProcessorTime { get; private set; }
-        public short Priority { get; private set; }
-        public short Nice { get; private set; }
-        public int ThreadCount { get; private set; }
-        public long StartTimeTicks { get; private set; }
-        public long VirtualMemorySize { get; private set; }
-        public long ResidentSetSize { get; private set; }
+
+        private string _name;
+        public string Name
+        {
+            get
+            {
+                EnsureInitialized();
+                return _name;
+            }
+        }
+
+        private ProcessState _state;
+        public ProcessState State
+        {
+            get
+            {
+                EnsureInitialized();
+                return _state;
+            }
+        }
+
+        private int _parentPid;
+        public int ParentPid
+        {
+            get
+            {
+                EnsureInitialized();
+                return _parentPid;
+            }
+        }
+
+        private int _groupId;
+        public int GroupId
+        {
+            get
+            {
+                EnsureInitialized();
+                return _groupId;
+            }
+        }
+
+        private int _sessionId;
+        public int SessionId
+        {
+            get
+            {
+                EnsureInitialized();
+                return _sessionId;
+            }
+        }
+
+        private long _minorFaults;
+        public long MinorFaults
+        {
+            get
+            {
+                EnsureInitialized();
+                return _minorFaults;
+            }
+        }
+
+        private long _majorFaults;
+        public long MajorFaults
+        {
+            get
+            {
+                EnsureInitialized();
+                return _majorFaults;
+            }
+        }
+
+        private double _userProcessorTime;
+        public double UserProcessorTime
+        {
+            get
+            {
+                EnsureInitialized();
+                return _userProcessorTime;
+            }
+        }
+
+        private double _kernelProcessorTime;
+        public double KernelProcessorTime
+        {
+            get
+            {
+                EnsureInitialized();
+                return _kernelProcessorTime;
+            }
+        }
+
+        private short _priority;
+        public short Priority
+        {
+            get
+            {
+                EnsureInitialized();
+                return _priority;
+            }
+        }
+
+        private short _nice;
+        public short Nice
+        {
+            get
+            {
+                EnsureInitialized();
+                return _nice;
+            }
+        }
+
+        private int _threadCount;
+        public int ThreadCount
+        {
+            get
+            {
+                EnsureInitialized();
+                return _threadCount;
+            }
+        }
+
+        private long _startTimeTicks;
+        public long StartTimeTicks
+        {
+            get
+            {
+                EnsureInitialized();
+                return _startTimeTicks;
+            }
+        }
+
+        private long _virtualMemorySize;
+        public long VirtualMemorySize
+        {
+            get
+            {
+                EnsureInitialized();
+                return _virtualMemorySize;
+            }
+        }
+
+        private long _residentSetSize;
+        public long ResidentSetSize
+        {
+            get
+            {
+                EnsureInitialized();
+                return _residentSetSize;
+            }
+        }
 
         private string _commandLine;
         public string CommandLine
@@ -73,16 +210,21 @@ namespace ProcFsCore
         
         public static Process Current => new Process(CurrentPid);
         
-        public Process(int pid, bool initialize = true)
+        public Process(int pid)
             : this()
         {
             Pid = pid;
-            if (initialize)
+        }
+
+        private void EnsureInitialized()
+        {
+            if (!_initialized) 
                 Refresh();
         }
         
         public void Refresh()
         {
+            _initialized = false;
             _commandLine = null;
             _startTimeUtc = null;
             using (var statStr = Buffer.FromFile($"{ProcFs.RootPath}/{Pid}/stat"))
@@ -95,19 +237,19 @@ namespace ProcFsCore
 
                 // (2) name
                 var name = statReader.ReadWord();
-                Name = name.Slice(1, name.Length - 2).ToUtf8String();
+                _name = name.Slice(1, name.Length - 2).ToUtf8String();
 
                 // (3) state
-                State = GetProcessState((char) statReader.ReadWord()[0]);
+                _state = GetProcessState((char) statReader.ReadWord()[0]);
 
                 // (4) ppid
-                ParentPid = statReader.ReadInt32();
+                _parentPid = statReader.ReadInt32();
 
                 // (5) pgrp
-                GroupId = statReader.ReadInt32();
+                _groupId = statReader.ReadInt32();
 
                 // (6) session
-                SessionId = statReader.ReadInt32();
+                _sessionId = statReader.ReadInt32();
 
                 // (7) tty_nr
                 statReader.ReadWord();
@@ -119,22 +261,22 @@ namespace ProcFsCore
                 statReader.ReadWord();
 
                 // (10) minflt
-                MinorFaults = statReader.ReadInt64();
+                _minorFaults = statReader.ReadInt64();
 
                 // (11) cminflt
                 statReader.ReadWord();
 
                 // (12) majflt
-                MajorFaults = statReader.ReadInt64();
+                _majorFaults = statReader.ReadInt64();
 
                 // (13) cmajflt
                 statReader.ReadWord();
 
                 // (14) utime
-                UserProcessorTime = statReader.ReadInt64() / (double) ProcFs.TicksPerSecond;
+                _userProcessorTime = statReader.ReadInt64() / (double) ProcFs.TicksPerSecond;
 
                 // (15) stime
-                KernelProcessorTime = statReader.ReadInt64() / (double) ProcFs.TicksPerSecond;
+                _kernelProcessorTime = statReader.ReadInt64() / (double) ProcFs.TicksPerSecond;
 
                 // (16) cutime
                 statReader.ReadWord();
@@ -143,26 +285,28 @@ namespace ProcFsCore
                 statReader.ReadWord();
 
                 // (18) priority
-                Priority = statReader.ReadInt16();
+                _priority = statReader.ReadInt16();
 
                 // (19) nice
-                Nice = statReader.ReadInt16();
+                _nice = statReader.ReadInt16();
 
                 // (20) num_threads
-                ThreadCount = statReader.ReadInt32();
+                _threadCount = statReader.ReadInt32();
 
                 // (21) itrealvalue
                 statReader.ReadWord();
 
                 // (22) starttime
-                StartTimeTicks = statReader.ReadInt64();
+                _startTimeTicks = statReader.ReadInt64();
 
                 // (23) vsize
-                VirtualMemorySize = statReader.ReadInt64();
+                _virtualMemorySize = statReader.ReadInt64();
 
                 // (24) rss
-                ResidentSetSize = statReader.ReadInt64() * Environment.SystemPageSize;
+                _residentSetSize = statReader.ReadInt64() * Environment.SystemPageSize;
             }
+
+            _initialized = true;
         }
 
         private static ProcessState GetProcessState(char state)

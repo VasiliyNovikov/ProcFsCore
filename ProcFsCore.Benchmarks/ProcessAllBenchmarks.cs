@@ -29,11 +29,10 @@ namespace ProcFsCore.Benchmarks
         [Benchmark]
         public void ProcFs_GetAllProcesses()
         {
-            foreach (var process in ProcFs.Processes(false))
+            foreach (var process in ProcFs.Processes())
             {
                 try
                 {
-                    process.Refresh();
                     Use(process.Pid);
                     Use(process.Name);
                     Use(process.StartTimeUtc);

@@ -6,8 +6,8 @@ namespace ProcFsCore.Benchmarks
     {
         private static void Main()
         {
-            //BenchmarkRunner.Run<ProcessAllBenchmarks>();
-            BenchmarkRunner.Run<NetStatisticsAllBenchmarks>();
+            BenchmarkRunner.Run<ProcessAllBenchmarks>();
+            //BenchmarkRunner.Run<NetStatisticsAllBenchmarks>();
         }
     }
 }
