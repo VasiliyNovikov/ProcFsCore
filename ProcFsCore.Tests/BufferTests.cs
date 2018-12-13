@@ -85,6 +85,48 @@ namespace ProcFsCore.Tests
         }
 
         [TestMethod]
+        public void Buffer_GC_Move_Test()
+        {
+            Allocate();
+            
+            var bufferRef = new BufferRef(16);
+            using (bufferRef.Value)
+            {
+                var initialSpan = Fill(bufferRef, out var initialPtr);
+
+                GC.Collect(GC.MaxGeneration);
+                GC.Collect(GC.MaxGeneration);
+                
+                var finalSpan = Fill(bufferRef, out var finalPtr);
+
+                Assert.IsTrue(initialSpan.SequenceEqual(finalSpan));
+                Assert.AreEqual(initialPtr, finalPtr);
+            }
+        }
+
+        private static void Allocate()
+        {
+            for (var i = 0; i < 64; i++)
+                GC.KeepAlive(new byte[64]);
+        }
+
+        private unsafe Span<byte> Fill(BufferRef bufferRef, out IntPtr ptr)
+        {
+            var span = bufferRef.Value.Span;
+            _rnd.NextBytes(span);
+            fixed (byte* p = &span.GetPinnableReference())
+                ptr = (IntPtr) p;
+            return span;
+        }
+
+        private class BufferRef
+        {
+            public readonly Buffer Value;
+
+            public BufferRef(int length) => Value = new Buffer(length);
+        }
+
+        [TestMethod]
         public void Span_Overlapped_Copy_Forward_Test()
         {
             Span<byte> data = stackalloc byte[0x2000];
