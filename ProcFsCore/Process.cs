@@ -73,11 +73,12 @@ namespace ProcFsCore
         
         public static Process Current => new Process(CurrentPid);
         
-        public Process(int pid)
+        public Process(int pid, bool initialize = true)
             : this()
         {
             Pid = pid;
-            Refresh();
+            if (initialize)
+                Refresh();
         }
         
         public void Refresh()

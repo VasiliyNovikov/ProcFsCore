@@ -26,8 +26,8 @@ namespace ProcFsCore
         }
         
         public string InterfaceName { get; }
-        public Direction Receive { get; }
-        public Direction Transmit { get; }
+        public readonly Direction Receive;
+        public readonly Direction Transmit;
 
         private NetStatistics(string interfaceName, in Direction receive, in Direction transmit)
         {

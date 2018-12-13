@@ -36,13 +36,13 @@ namespace ProcFsCore
             }
         }
         
-        public static IEnumerable<Process> Processes()
+        public static IEnumerable<Process> Processes(bool initialize = true)
         {
             foreach (var pidPath in Directory.EnumerateDirectories(RootPath))
             {
                 var pidDir = Path.GetFileName(pidPath);
                 if (Int32.TryParse(pidDir, out var pid))
-                    yield return new Process(pid);
+                    yield return new Process(pid, initialize);
             }
         }
     }
