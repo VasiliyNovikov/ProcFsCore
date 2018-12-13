@@ -20,7 +20,7 @@ namespace ProcFsCore
                 // '/proc/stat -> btime' gets the boot time.
                 // btime is the time of system boot in seconds since the Unix epoch.
                 // It includes suspended time and is updated based on the system time (settimeofday).
-                using (var statBuffer = Buffer.FromFile(StatPath))
+                using (var statBuffer = Buffer.FromFile(StatPath, 8192))
                 {
                     var btimeLineStart = statBuffer.Span.IndexOf(BtimeStr.Span);
                     if (btimeLineStart >= 0)

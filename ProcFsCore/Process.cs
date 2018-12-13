@@ -227,10 +227,9 @@ namespace ProcFsCore
             _initialized = false;
             _commandLine = null;
             _startTimeUtc = null;
-            using (var statStr = Buffer.FromFile($"{ProcFs.RootPath}/{Pid}/stat"))
+            using (var statReader = new Utf8FileReader($"{ProcFs.RootPath}/{Pid}/stat"))
             {
                 // See http://man7.org/linux/man-pages/man5/proc.5.html /proc/[pid]/stat section
-                var statReader = new Utf8SpanReader(statStr.Span);
 
                 // (1) pid
                 statReader.ReadWord();

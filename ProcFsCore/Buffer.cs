@@ -6,7 +6,7 @@ namespace ProcFsCore
 {
     public unsafe struct Buffer : IDisposable
     {
-        public const int MinimumCapacity = 512;
+        public const int MinimumCapacity = 32;
 
         private byte[] _rentedBuffer;
 #pragma warning disable 649
