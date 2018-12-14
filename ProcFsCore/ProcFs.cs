@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace ProcFsCore
@@ -11,22 +12,34 @@ namespace ProcFsCore
         
         public static readonly int TicksPerSecond = Native.SystemConfig(Native.SystemConfigName.TicksPerSecond);
 
+        private static readonly TimeSpan BootTimeCacheInterval = TimeSpan.FromSeconds(0.5);
+        private static DateTime? _bootTimeUtc;
+        private static readonly Stopwatch BootTimeCacheTimer = new Stopwatch();
         private static readonly ReadOnlyMemory<byte> BtimeStr = "btime ".ToUtf8();
         public static DateTime BootTimeUtc
         {
             get
             {
-                // '/proc/stat -> btime' gets the boot time.
-                // btime is the time of system boot in seconds since the Unix epoch.
-                // It includes suspended time and is updated based on the system time (settimeofday).
-                using (var statReader = new Utf8FileReader(StatPath))
+                lock (BootTimeCacheTimer)
                 {
-                    statReader.SkipFragment(BtimeStr.Span, true);
-                    if (statReader.EndOfStream)
-                        throw new NotSupportedException();
-                    
-                    var bootTimeSeconds = statReader.ReadInt64();
-                    return DateTime.UnixEpoch + TimeSpan.FromSeconds(bootTimeSeconds);
+                    if (_bootTimeUtc == null || BootTimeCacheTimer.Elapsed > BootTimeCacheInterval)
+                    {
+                        // '/proc/stat -> btime' gets the boot time.
+                        // btime is the time of system boot in seconds since the Unix epoch.
+                        // It includes suspended time and is updated based on the system time (settimeofday).
+                        using (var statReader = new Utf8FileReader(StatPath))
+                        {
+                            statReader.SkipFragment(BtimeStr.Span, true);
+                            if (statReader.EndOfStream)
+                                throw new NotSupportedException();
+
+                            var bootTimeSeconds = statReader.ReadInt64();
+                            _bootTimeUtc = DateTime.UnixEpoch + TimeSpan.FromSeconds(bootTimeSeconds);
+                            BootTimeCacheTimer.Restart();
+                        }
+                    }
+
+                    return _bootTimeUtc.Value;
                 }
             }
         }
