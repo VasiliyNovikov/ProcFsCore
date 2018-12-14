@@ -9,15 +9,15 @@ namespace ProcFsCore.Tests
         public void MemoryStatistics_Test()
         {
             var stats = ProcFs.Memory.Statistics();
-            Assert.IsTrue(stats.Total > 0);
-            Assert.IsTrue(stats.Available > 0);
-            Assert.IsTrue(stats.Free > 0);
-            Assert.IsTrue(stats.Total > stats.Available);
-            Assert.IsTrue(stats.Total > stats.Free);
+            Assert.IsTrue(stats.Total > 0, "Total > 0");
+            Assert.IsTrue(stats.Available > 0, "Available > 0");
+            Assert.IsTrue(stats.Free > 0, "Free > 0");
+            Assert.IsTrue(stats.Total > stats.Available, "Total > Available");
+            Assert.IsTrue(stats.Total > stats.Free, "Total > Free");
             
-            Assert.IsTrue(stats.SwapTotal > 0);
-            Assert.IsTrue(stats.SwapFree > 0);
-            Assert.IsTrue(stats.SwapTotal > stats.SwapFree);
+            Assert.IsTrue(stats.SwapTotal > 0, "SwapTotal > 0");
+            Assert.IsTrue(stats.SwapFree > 0, "SwapFree > 0");
+            Assert.IsTrue(stats.SwapTotal > stats.SwapFree, "SwapTotal > SwapFree");
         }
     }
 }
