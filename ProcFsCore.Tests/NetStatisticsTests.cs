@@ -25,12 +25,12 @@ namespace ProcFsCore.Tests
                     long AdjustStat(long value) => Math.Min(UInt32.MaxValue, value);
 
                     Assert.AreEqual(expectedStat.BytesReceived, AdjustStat(actualStat.Receive.Bytes), 100000);
-                    Assert.AreEqual(expectedStat.UnicastPacketsReceived, actualStat.Receive.Packets, 100);
+                    Assert.AreEqual(expectedStat.UnicastPacketsReceived, AdjustStat(actualStat.Receive.Packets), 100);
                     Assert.AreEqual(expectedStat.IncomingPacketsDiscarded, actualStat.Receive.Drops);
                     Assert.AreEqual(expectedStat.IncomingPacketsWithErrors, actualStat.Receive.Errors);
                     
                     Assert.AreEqual(expectedStat.BytesSent, AdjustStat(actualStat.Transmit.Bytes), 100000);
-                    Assert.AreEqual(expectedStat.UnicastPacketsSent, actualStat.Transmit.Packets, 100);
+                    Assert.AreEqual(expectedStat.UnicastPacketsSent, AdjustStat(actualStat.Transmit.Packets), 100);
                     Assert.AreEqual(expectedStat.OutgoingPacketsDiscarded, actualStat.Transmit.Drops);
                     Assert.AreEqual(expectedStat.OutgoingPacketsWithErrors, actualStat.Transmit.Errors);
                 }

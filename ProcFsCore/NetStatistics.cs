@@ -47,7 +47,8 @@ namespace ProcFsCore
 
         internal static IEnumerable<NetStatistics> GetAll()
         {
-            using (var statReader = new Utf8FileReader(NetDevPath))
+            var statReader = new Utf8FileReader(NetDevPath);
+            try
             {
                 statReader.SkipLine();
                 statReader.SkipLine();
@@ -55,31 +56,33 @@ namespace ProcFsCore
                 {
                     statReader.SkipWhiteSpaces();
                     var interfaceName = statReader.ReadFragment(InterfaceNameSeparators.Span).ToUtf8String();
-                    
-                    var receiveBytes = statReader.ReadInt64();
-                    var receivePackets = statReader.ReadInt64();
-                    var receiveErrors = statReader.ReadInt64();
-                    var receiveDrops = statReader.ReadInt64();
+
+                    var receive = Direction.Read(ref statReader);
 
                     for (var i = 0; i < ReceiveColumnCount - 4; ++i)
                         statReader.SkipWord();
-                    
-                    var transmitBytes = statReader.ReadInt64();
-                    var transmitPackets = statReader.ReadInt64();
-                    var transmitErrors = statReader.ReadInt64();
-                    var transmitDrops = statReader.ReadInt64();
+
+                    var transmit = Direction.Read(ref statReader);
 
                     statReader.SkipLine();
-                    yield return new NetStatistics(interfaceName,
-                                                   new Direction(receiveBytes, receivePackets, receiveErrors, receiveDrops),
-                                                   new Direction(transmitBytes, transmitPackets, transmitErrors, transmitDrops));
+
+                    yield return new NetStatistics(interfaceName, receive, transmit);
                 }
+            }
+            finally
+            {
+                statReader.Dispose();
             }
         }
 
         public struct  Direction
         {
-            internal Direction(long bytes, long packets, long errors, long drops)
+            public long Bytes { get; }
+            public long Packets { get; }
+            public long Errors { get; }
+            public long Drops { get; }
+
+            private Direction(long bytes, long packets, long errors, long drops)
             {
                 Bytes = bytes;
                 Packets = packets;
@@ -87,10 +90,14 @@ namespace ProcFsCore
                 Drops = drops;
             }
 
-            public long Bytes { get; }
-            public long Packets { get; }
-            public long Errors { get; }
-            public long Drops { get; }
+            internal static Direction Read(ref Utf8FileReader reader)
+            {
+                var bytes = reader.ReadInt64();
+                var packets = reader.ReadInt64();
+                var errors = reader.ReadInt64();
+                var drops = reader.ReadInt64();
+                return new Direction(bytes, packets, errors, drops);
+            }
         }
     }
 }
