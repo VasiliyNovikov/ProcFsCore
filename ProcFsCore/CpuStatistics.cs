@@ -19,13 +19,11 @@ namespace ProcFsCore
         private static readonly ReadOnlyMemory<byte> CpuNumberStart = "cpu".ToUtf8();
         internal static IEnumerable<CpuStatistics> GetAll()
         {
-            using (var buffer = Buffer.FromFile(StatPath, 8192))
+            using (var statReader = new Utf8FileReader(StatPath))
             {
-                var position = 0;
-                while (position < buffer.Length)
+                while (!statReader.EndOfStream)
                 {
-                    var bufferReader = new Utf8SpanReader(buffer.Span) {Position = position};
-                    var cpuStr = bufferReader.ReadWord();
+                    var cpuStr = statReader.ReadWord();
                     if (!cpuStr.StartsWith(CpuNumberStart.Span))
                         yield break;
 
@@ -40,16 +38,15 @@ namespace ProcFsCore
                     }
                     
                     var ticksPerSecond = (double) ProcFs.TicksPerSecond;
-                    var userTime = bufferReader.ReadInt64() / ticksPerSecond;
-                    var niceTime = bufferReader.ReadInt64() / ticksPerSecond;
-                    var kernelTime = bufferReader.ReadInt64() / ticksPerSecond;
-                    var idleTime = bufferReader.ReadInt64() / ticksPerSecond;
-                    bufferReader.ReadWord();
-                    var irqTime = bufferReader.ReadInt64() / ticksPerSecond;
-                    var softIrqTime = bufferReader.ReadInt64() / ticksPerSecond;
+                    var userTime = statReader.ReadInt64() / ticksPerSecond;
+                    var niceTime = statReader.ReadInt64() / ticksPerSecond;
+                    var kernelTime = statReader.ReadInt64() / ticksPerSecond;
+                    var idleTime = statReader.ReadInt64() / ticksPerSecond;
+                    statReader.SkipWord();
+                    var irqTime = statReader.ReadInt64() / ticksPerSecond;
+                    var softIrqTime = statReader.ReadInt64() / ticksPerSecond;
                     
-                    bufferReader.ReadLine();
-                    position = bufferReader.Position;
+                    statReader.SkipLine();
 
                     yield return new CpuStatistics
                     {

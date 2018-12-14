@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -76,10 +77,16 @@ namespace ProcFsCore.Tests
         [TestMethod]
         public void Process_All_Test()
         {
-            var pis = ProcFs.Processes().ToDictionary(pi => pi.Pid);
-            var processes = DiagnosticsProcess.GetProcesses().ToDictionary(p => p.Id);
-            Assert.AreEqual(processes.Count, pis.Count);
-            CollectionAssert.AreEquivalent(pis.Keys, processes.Keys);
+            Dictionary<int, Process> pis = null;
+            Dictionary<int, DiagnosticsProcess> processes = null;
+            RetryOnAssert(() =>
+            {
+                pis = ProcFs.Processes().ToDictionary(pi => pi.Pid);
+                processes = DiagnosticsProcess.GetProcesses().ToDictionary(p => p.Id);
+                Assert.AreEqual(processes.Count, pis.Count);
+                CollectionAssert.AreEquivalent(pis.Keys, processes.Keys);
+            });
+            
             foreach (var pi in pis.Values)
             {
                 var process = processes[pi.Pid];

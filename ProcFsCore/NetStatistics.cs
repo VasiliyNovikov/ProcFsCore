@@ -11,16 +11,23 @@ namespace ProcFsCore
 
         static NetStatistics()
         {
-            using (var buffer = Buffer.FromFile(NetDevPath, 2048))
+            using (var statReader = new Utf8FileReader(NetDevPath))
             {
-                var bufferReader = new Utf8SpanReader(buffer.Span);
-                bufferReader.ReadLine();
-                var columnLineReader = new Utf8SpanReader(bufferReader.ReadLine());
-                columnLineReader.ReadFragment('|');
-                var receiveColumnsReader = new Utf8SpanReader(columnLineReader.ReadFragment('|'));
+                statReader.SkipLine();
+                statReader.SkipFragment('|');
+                statReader.SkipWhiteSpaces();
                 var receiveColumnCount = 0;
-                while (!receiveColumnsReader.ReadWord().IsEmpty)
+                while (true)
+                {
+                    var column = statReader.ReadWord();
+                    if (column.IndexOf('|') >= 0)
+                    {
+                        if (column.Length != 0)
+                            ++receiveColumnCount;
+                        break;
+                    }
                     ++receiveColumnCount;
+                }
                 ReceiveColumnCount = receiveColumnCount;
             }
         }
@@ -40,34 +47,29 @@ namespace ProcFsCore
 
         internal static IEnumerable<NetStatistics> GetAll()
         {
-            using (var buffer = Buffer.FromFile(NetDevPath, 2048))
+            using (var statReader = new Utf8FileReader(NetDevPath))
             {
-                var bufferReader2 = new Utf8SpanReader(buffer.Span);
-                bufferReader2.ReadLine();
-                bufferReader2.ReadLine();
-                var position = bufferReader2.Position;
-                
-                while (position < buffer.Length)
+                statReader.SkipLine();
+                statReader.SkipLine();
+                while (!statReader.EndOfStream)
                 {
-                    var bufferReader = new Utf8SpanReader(buffer.Span) {Position = position};
-                    bufferReader.SkipWhiteSpaces();
-                    var interfaceName = bufferReader.ReadFragment(InterfaceNameSeparators.Span).ToUtf8String();
+                    statReader.SkipWhiteSpaces();
+                    var interfaceName = statReader.ReadFragment(InterfaceNameSeparators.Span).ToUtf8String();
                     
-                    var receiveBytes = bufferReader.ReadInt64();
-                    var receivePackets = bufferReader.ReadInt64();
-                    var receiveErrors = bufferReader.ReadInt64();
-                    var receiveDrops = bufferReader.ReadInt64();
+                    var receiveBytes = statReader.ReadInt64();
+                    var receivePackets = statReader.ReadInt64();
+                    var receiveErrors = statReader.ReadInt64();
+                    var receiveDrops = statReader.ReadInt64();
 
                     for (var i = 0; i < ReceiveColumnCount - 4; ++i)
-                        bufferReader.ReadWord();
+                        statReader.SkipWord();
                     
-                    var transmitBytes = bufferReader.ReadInt64();
-                    var transmitPackets = bufferReader.ReadInt64();
-                    var transmitErrors = bufferReader.ReadInt64();
-                    var transmitDrops = bufferReader.ReadInt64();
+                    var transmitBytes = statReader.ReadInt64();
+                    var transmitPackets = statReader.ReadInt64();
+                    var transmitErrors = statReader.ReadInt64();
+                    var transmitDrops = statReader.ReadInt64();
 
-                    bufferReader.ReadLine();
-                    position = bufferReader.Position;
+                    statReader.SkipLine();
                     yield return new NetStatistics(interfaceName,
                                                    new Direction(receiveBytes, receivePackets, receiveErrors, receiveDrops),
                                                    new Direction(transmitBytes, transmitPackets, transmitErrors, transmitDrops));

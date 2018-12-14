@@ -1,12 +1,13 @@
 using System;
 using System.Buffers;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace ProcFsCore
 {
     public unsafe struct Buffer : IDisposable
     {
-        public const int MinimumCapacity = 32;
+        public const int MinimumCapacity = 512;
 
         private byte[] _rentedBuffer;
 #pragma warning disable 649
@@ -21,12 +22,10 @@ namespace ProcFsCore
             {
                 if (Length == 0)
                     return default;
-                
-                if (_rentedBuffer == null)
-                    fixed (byte* d = &_fixedBuffer[0])
-                        return new Span<byte>(d, Length);
-                
-                return new Span<byte>(_rentedBuffer, 0, Length);
+
+                return _rentedBuffer == null
+                    ? MemoryMarshal.CreateSpan(ref _fixedBuffer[0], Length)
+                    : new Span<byte>(_rentedBuffer, 0, Length);
             }
         }
 

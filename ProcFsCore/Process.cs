@@ -232,7 +232,7 @@ namespace ProcFsCore
                 // See http://man7.org/linux/man-pages/man5/proc.5.html /proc/[pid]/stat section
 
                 // (1) pid
-                statReader.ReadWord();
+                statReader.SkipWord();
 
                 // (2) name
                 var name = statReader.ReadWord();
@@ -251,25 +251,25 @@ namespace ProcFsCore
                 _sessionId = statReader.ReadInt32();
 
                 // (7) tty_nr
-                statReader.ReadWord();
+                statReader.SkipWord();
 
                 // (8) tpgid
-                statReader.ReadWord();
+                statReader.SkipWord();
 
                 // (9) flags
-                statReader.ReadWord();
+                statReader.SkipWord();
 
                 // (10) minflt
                 _minorFaults = statReader.ReadInt64();
 
                 // (11) cminflt
-                statReader.ReadWord();
+                statReader.SkipWord();
 
                 // (12) majflt
                 _majorFaults = statReader.ReadInt64();
 
                 // (13) cmajflt
-                statReader.ReadWord();
+                statReader.SkipWord();
 
                 // (14) utime
                 _userProcessorTime = statReader.ReadInt64() / (double) ProcFs.TicksPerSecond;
@@ -278,10 +278,10 @@ namespace ProcFsCore
                 _kernelProcessorTime = statReader.ReadInt64() / (double) ProcFs.TicksPerSecond;
 
                 // (16) cutime
-                statReader.ReadWord();
+                statReader.SkipWord();
 
                 // (17) cstime
-                statReader.ReadWord();
+                statReader.SkipWord();
 
                 // (18) priority
                 _priority = statReader.ReadInt16();
@@ -293,7 +293,7 @@ namespace ProcFsCore
                 _threadCount = statReader.ReadInt32();
 
                 // (21) itrealvalue
-                statReader.ReadWord();
+                statReader.SkipWord();
 
                 // (22) starttime
                 _startTimeTicks = statReader.ReadInt64();

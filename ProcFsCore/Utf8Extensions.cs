@@ -13,7 +13,7 @@ namespace ProcFsCore
         public static int IndexOf(this ReadOnlySpan<byte> source, char value, int start) => start + source.Slice(start).IndexOf(value);
         public static int IndexOf(this Span<byte> source, char value, int start) => start + source.Slice(start).IndexOf(value);
 
-        public static Span<byte> Trim(this Span<byte> source)
+        public static ReadOnlySpan<byte> Trim(this ReadOnlySpan<byte> source)
         {
             var startPos = 0;
             while (startPos < source.Length && Char.IsWhiteSpace((char)source[startPos]))
@@ -31,6 +31,8 @@ namespace ProcFsCore
 
             return source.Slice(startPos, endPos - startPos + 1);
         }
+
+        public static ReadOnlySpan<byte> Trim(this Span<byte> source) => ((ReadOnlySpan<byte>) source).Trim();
 
         public static void Replace(this Span<byte> source, char oldValue, char newValue)
         {
