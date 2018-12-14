@@ -18,9 +18,7 @@ namespace ProcFsCore.Tests
             {
                 Assert.AreEqual(i, stat.CpuNumber ?? -1);
                 Assert.IsTrue(stat.UserTime > 0);
-                Assert.IsTrue(stat.NiceTime > 0);
                 Assert.IsTrue(stat.KernelTime > 0);
-                Assert.IsTrue(stat.IdleTime > 0);
                 Assert.IsTrue(stat.SoftIrqTime > 0);
                 ++i;
             }
