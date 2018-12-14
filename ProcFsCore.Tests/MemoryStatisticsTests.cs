@@ -14,10 +14,6 @@ namespace ProcFsCore.Tests
             Assert.IsTrue(stats.Free > 0, "Free > 0");
             Assert.IsTrue(stats.Total > stats.Available, "Total > Available");
             Assert.IsTrue(stats.Total > stats.Free, "Total > Free");
-            
-            Assert.IsTrue(stats.SwapTotal > 0, "SwapTotal > 0");
-            Assert.IsTrue(stats.SwapFree > 0, "SwapFree > 0");
-            Assert.IsTrue(stats.SwapTotal > stats.SwapFree, "SwapTotal > SwapFree");
         }
     }
 }
