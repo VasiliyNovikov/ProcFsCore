@@ -17,9 +17,9 @@ namespace ProcFsCore.Tests
             foreach (var stat in stats)
             {
                 Assert.AreEqual(i, stat.CpuNumber ?? -1);
-                Assert.IsTrue(stat.UserTime > 0);
-                Assert.IsTrue(stat.KernelTime > 0);
-                Assert.IsTrue(stat.SoftIrqTime > 0);
+                Assert.IsTrue(stat.UserTime > 0, "User time shouldn't be 0");
+                Assert.IsTrue(stat.KernelTime > 0, "Kernel time shouldn't be 0");
+                Assert.IsTrue(stat.SoftIrqTime > 0, "SOF IRQ time shouldn't be 0");
                 ++i;
             }
         }
