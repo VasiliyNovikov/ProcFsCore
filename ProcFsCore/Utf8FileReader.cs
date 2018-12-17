@@ -6,7 +6,13 @@ namespace ProcFsCore
 {
     public struct Utf8FileReader : IDisposable
     {
+        internal static readonly ReadOnlyMemory<byte> DefaultWhiteSpaces = " \n \t\v\f\r\x0085".ToUtf8();
+        internal static readonly ReadOnlyMemory<byte> DefaultLineSeparators = "\n\r".ToUtf8();
+
         private readonly Stream _stream;
+        private readonly ReadOnlyMemory<byte> _whiteSpaces;
+        private readonly ReadOnlyMemory<byte> _lineSeparators;
+
         private Buffer _buffer;
         private int _lockedStart;
         private int _bufferedStart;
@@ -15,9 +21,12 @@ namespace ProcFsCore
 
         public bool EndOfStream => _endOfStream && _bufferedStart == _bufferedEnd;
 
-        public Utf8FileReader(string fileName, int initialBufferSize = Buffer.MinimumCapacity)
+        public Utf8FileReader(string fileName, int initialBufferSize = Buffer.MinimumCapacity, ReadOnlyMemory<byte>? whiteSpaces = null, ReadOnlyMemory<byte>? lineSeparators = null)
         {
             _stream = File.OpenRead(fileName);
+            _whiteSpaces = whiteSpaces ?? DefaultWhiteSpaces;
+            _lineSeparators = lineSeparators ?? DefaultLineSeparators;
+
             _buffer = new Buffer(initialBufferSize);
             _lockedStart = -1;
             _bufferedStart = 0;
@@ -185,41 +194,150 @@ namespace ProcFsCore
             return result;
         }
 
-        private static readonly ReadOnlyMemory<byte> LineSeparators = "\n\r".ToUtf8();
-        public ReadOnlySpan<byte> ReadLine() => ReadFragment(LineSeparators.Span);
-        public void SkipLine() => SkipFragment(LineSeparators.Span);
+        public ReadOnlySpan<byte> ReadLine() => ReadFragment(_lineSeparators.Span);
+        public void SkipLine() => SkipFragment(_lineSeparators.Span);
 
-        private static readonly ReadOnlyMemory<byte> WhiteSpaces = " \n \t\v\f\r\x0085".ToUtf8();
-        public ReadOnlySpan<byte> ReadWord() => ReadFragment(WhiteSpaces.Span);
-        public void SkipWord() => SkipFragment(WhiteSpaces.Span);
-        public void SkipWhiteSpaces() => SkipSeparators(WhiteSpaces.Span);
+        public ReadOnlySpan<byte> ReadWord() => ReadFragment(_whiteSpaces.Span);
+        public void SkipWord() => SkipFragment(_whiteSpaces.Span);
+        public void SkipWhiteSpaces() => SkipSeparators(_whiteSpaces.Span);
 
         public string ReadStringWord() => ReadWord().ToUtf8String();
 
-        public short ReadInt16()
+        public short ReadInt16(char format = default)
         {
             var word = ReadWord();
-            if (Utf8Parser.TryParse(word, out short result, out _))
+            if (Utf8Parser.TryParse(word, out short result, out _, format))
                 return result;
             throw new FormatException($"{word.ToUtf8String()} is not valid Int16 value");
         }
         
-        public int ReadInt32()
+        public int ReadInt32(char format = default)
         {
             var word = ReadWord();
-            if (Utf8Parser.TryParse(word, out int result, out _))
+            if (Utf8Parser.TryParse(word, out int result, out _, format))
                 return result;
             throw new FormatException($"{word.ToUtf8String()} is not valid Int32 value");
         }
         
-        public long ReadInt64()
+        public long ReadInt64(char format = default)
         {
             var word = ReadWord();
-            if (Utf8Parser.TryParse(word, out long result, out _))
+            if (Utf8Parser.TryParse(word, out long result, out _, format))
                 return result;
             throw new FormatException($"{word.ToUtf8String()} is not valid Int64 value");
         }
 
         public override string ToString() => _buffer.Span.Slice(_bufferedStart, _bufferedEnd - _bufferedStart).ToUtf8String();
+    }
+
+    public ref struct Utf8SpanReader
+    {
+        private readonly ReadOnlySpan<byte> _span;
+        private readonly ReadOnlySpan<byte> _whiteSpaces;
+        private readonly ReadOnlySpan<byte> _lineSeparators;
+        
+        private int _position;
+        
+        public bool EndOfSpan => _position == _span.Length;
+
+        public Utf8SpanReader(ReadOnlySpan<byte> span, ReadOnlyMemory<byte>? whiteSpaces = null, ReadOnlyMemory<byte>? lineSeparators = null)
+        {
+            _span = span;
+            _whiteSpaces = (whiteSpaces ?? Utf8FileReader.DefaultWhiteSpaces).Span;
+            _lineSeparators = (lineSeparators ?? Utf8FileReader.DefaultLineSeparators).Span;
+            _position = 0;
+        }
+        
+        public void SkipSeparators(ReadOnlySpan<byte> separators)
+        {
+            while (!EndOfSpan && separators.IndexOf(_span[_position]) >= 0)
+                ++_position;
+        }
+        
+        public void SkipFragment(ReadOnlySpan<byte> separators)
+        {
+            if (EndOfSpan)
+                return;
+
+            var separatorPos = _span.Slice(_position).IndexOfAny(separators);
+
+            if (separatorPos < 0)
+            {
+                _position = _span.Length;
+                return;
+            }
+
+            _position += separatorPos + 1;
+            SkipSeparators(separators);
+        }
+        
+        public ReadOnlySpan<byte> ReadFragment(ReadOnlySpan<byte> separators)
+        {
+            if (EndOfSpan)
+                return default;
+
+            var span = _span.Slice(_position);
+            var separatorPos = span.IndexOfAny(separators);
+
+            if (separatorPos < 0)
+            {
+                _position = _span.Length;
+                return span;
+            }
+
+            var result = span.Slice(0, separatorPos);
+            _position += separatorPos + 1;
+            SkipSeparators(separators);
+            return result;
+        }
+        
+        public unsafe ReadOnlySpan<byte> ReadFragment(char separator)
+        {
+            var separatorsBuff = stackalloc byte[1] {(byte) separator};
+            var separators = new ReadOnlySpan<byte>(separatorsBuff, 1);
+            return ReadFragment(separators);
+        }
+
+        public ReadOnlySpan<byte> ReadToEnd()
+        {
+            var result = _span.Slice(_position);
+            _position = _span.Length;
+            return result;
+        }
+
+        public ReadOnlySpan<byte> ReadLine() => ReadFragment(_lineSeparators);
+        public void SkipLine() => SkipFragment(_lineSeparators);
+
+        public ReadOnlySpan<byte> ReadWord() => ReadFragment(_whiteSpaces);
+        public void SkipWord() => SkipFragment(_whiteSpaces);
+        public void SkipWhiteSpaces() => SkipSeparators(_whiteSpaces);
+
+        public string ReadStringWord() => ReadWord().ToUtf8String();
+
+        public short ReadInt16(char format = default)
+        {
+            var word = ReadWord();
+            if (Utf8Parser.TryParse(word, out short result, out _, format))
+                return result;
+            throw new FormatException($"{word.ToUtf8String()} is not valid Int16 value");
+        }
+        
+        public int ReadInt32(char format = default)
+        {
+            var word = ReadWord();
+            if (Utf8Parser.TryParse(word, out int result, out _, format))
+                return result;
+            throw new FormatException($"{word.ToUtf8String()} is not valid Int32 value");
+        }
+        
+        public long ReadInt64(char format = default)
+        {
+            var word = ReadWord();
+            if (Utf8Parser.TryParse(word, out long result, out _, format))
+                return result;
+            throw new FormatException($"{word.ToUtf8String()} is not valid Int64 value");
+        }
+
+        public override string ToString() => _span.ToUtf8String();
     }
 }

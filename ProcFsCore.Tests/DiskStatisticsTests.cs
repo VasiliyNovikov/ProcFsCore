@@ -20,7 +20,6 @@ namespace ProcFsCore.Tests
                 }
                 
                 Verify(stat.Reads);
-                Verify(stat.Writes);
                 
                 Assert.IsTrue(stat.TotalTime > 0, "TotalTime > 0");
                 Assert.IsTrue(stat.TotalWeightedTime >= stat.TotalTime, "TotalWeightedTime >= TotalTime");

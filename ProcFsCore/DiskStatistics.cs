@@ -47,8 +47,8 @@ namespace ProcFsCore
 
                     var deviceNameStr = deviceName.ToUtf8String();
 
-                    var reads = Operation.Read(ref statReader);
-                    var writes = Operation.Read(ref statReader);
+                    var reads = Operation.Parse(ref statReader);
+                    var writes = Operation.Parse(ref statReader);
 
                     statReader.SkipWord();
                     var totalTime = statReader.ReadInt64() / 1_000_000.0;
@@ -78,7 +78,7 @@ namespace ProcFsCore
                 Time = time;
             }
 
-            internal static Operation Read(ref Utf8FileReader reader)
+            internal static Operation Parse(ref Utf8FileReader reader)
             {
                 var count = reader.ReadInt64();
                 var merged = reader.ReadInt64();

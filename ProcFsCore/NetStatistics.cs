@@ -57,12 +57,12 @@ namespace ProcFsCore
                     statReader.SkipWhiteSpaces();
                     var interfaceName = statReader.ReadFragment(InterfaceNameSeparators.Span).ToUtf8String();
 
-                    var receive = Direction.Read(ref statReader);
+                    var receive = Direction.Parse(ref statReader);
 
                     for (var i = 0; i < ReceiveColumnCount - 4; ++i)
                         statReader.SkipWord();
 
-                    var transmit = Direction.Read(ref statReader);
+                    var transmit = Direction.Parse(ref statReader);
 
                     statReader.SkipLine();
 
@@ -90,7 +90,7 @@ namespace ProcFsCore
                 Drops = drops;
             }
 
-            internal static Direction Read(ref Utf8FileReader reader)
+            internal static Direction Parse(ref Utf8FileReader reader)
             {
                 var bytes = reader.ReadInt64();
                 var packets = reader.ReadInt64();
