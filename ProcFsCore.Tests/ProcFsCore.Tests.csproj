@@ -13,4 +13,9 @@
     <ItemGroup>
       <ProjectReference Include="..\ProcFsCore\ProcFsCore.csproj" />
     </ItemGroup>
+    <ItemGroup>
+      <None Update="proc\net\arp">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
 </Project>

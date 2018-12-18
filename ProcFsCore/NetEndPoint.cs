@@ -14,7 +14,7 @@ namespace ProcFsCore
             Port = port;
         }
 
-        public static NetEndPoint Parse(ref Utf8SpanReader statReader) => new NetEndPoint(NetAddress.Parse(statReader.ReadFragment(':')), statReader.ReadInt32('x'));
+        public static NetEndPoint Parse(ref Utf8SpanReader statReader) => new NetEndPoint(NetAddress.Parse(statReader.ReadFragment(':'), NetAddressFormat.Hex), statReader.ReadInt32('x'));
 
         public override string ToString() => ((IPEndPoint)this)?.ToString();
         

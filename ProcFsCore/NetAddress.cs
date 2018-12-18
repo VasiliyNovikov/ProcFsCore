@@ -34,18 +34,35 @@ namespace ProcFsCore
             address.CopyTo(Data);    
         }
 
-        public static NetAddress Parse(ReadOnlySpan<byte> hexAddress)
+        public static NetAddress Parse(ReadOnlySpan<byte> addressString, NetAddressFormat format)
         {
-            Span<uint> address = stackalloc uint[MaxAddressLength >> 2];
-            var addressLength = hexAddress.Length >> 3;
-            for (var i = 0; i < addressLength; ++i)
+            switch (format)
             {
-                var hexPart = hexAddress.Slice(i << 3, 8);
-                Utf8Parser.TryParse(hexPart, out uint addressPart, out _, 'x');
-                address[i] = addressPart;
-            }
+                case NetAddressFormat.Hex:
+                {
+                    Span<uint> address = stackalloc uint[MaxAddressLength >> 2];
+                    var addressLength = addressString.Length >> 3;
+                    for (var i = 0; i < addressLength; ++i)
+                    {
+                        var hexPart = addressString.Slice(i << 3, 8);
+                        Utf8Parser.TryParse(hexPart, out uint addressPart, out _, 'x');
+                        address[i] = addressPart;
+                    }
 
-            return new NetAddress(MemoryMarshal.Cast<uint, byte>(address.Slice(0, addressLength)));
+                    return new NetAddress(MemoryMarshal.Cast<uint, byte>(address.Slice(0, addressLength)));
+                }
+                case NetAddressFormat.Human:
+                {
+                    Span<char> addressStr = stackalloc char[64];
+                    Utf8Extensions.Encoding.GetChars(addressString, addressStr);
+                    var frameworkAddress = IPAddress.Parse(addressStr.Slice(0, addressString.Length));
+                    Span<byte> addressBytes = stackalloc byte[MaxAddressLength];
+                    frameworkAddress.TryWriteBytes(addressBytes, out var addressLength);
+                    return new NetAddress(addressBytes.Slice(0, addressLength));
+                }
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(format), format, null);
+            }
         }
         
         public override string ToString() => ((IPAddress)this).ToString();

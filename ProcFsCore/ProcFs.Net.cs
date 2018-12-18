@@ -15,6 +15,8 @@ namespace ProcFsCore
                 public static IEnumerable<NetService> Raw(NetAddressVersion addressVersion) => NetService.GetRaw(addressVersion);
                 public static IEnumerable<NetService> Unix() => NetService.GetUnix();
             }
+
+            public static IEnumerable<NetArpEntry> Arp() => NetArpEntry.Get();
         }
     }
 }

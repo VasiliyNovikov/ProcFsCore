@@ -1,0 +1,6 @@
+IP address       HW type     Flags       HW address            Mask     Device
+10.164.164.4     0x1         0x2         4c:77:6d:ab:7a:bf     *        br1
+10.164.164.14    0x1         0x2         a8:0c:0d:1e:56:0b     *        br1
+10.10.144.66     0x1         0x2         f2:00:00:00:20:00     *        br0
+10.164.165.92    0x1         0x2         54:e1:ad:30:cb:ad     *        br1
+10.10.144.70     0x1         0x2         f2:00:00:00:11:00     *        br0
