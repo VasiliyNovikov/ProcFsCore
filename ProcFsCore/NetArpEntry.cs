@@ -19,7 +19,7 @@ namespace ProcFsCore
             Device = device;
         }
 
-        public override string ToString() => $"{Address} {HardwareAddress} {Mask} {Device}";
+        public override string ToString() => $"{Address.ToString()} {HardwareAddress.ToString()} {Mask} {Device}";
 
         internal static IEnumerable<NetArpEntry> Get() => Get(NetArpPath);
         

@@ -11,6 +11,8 @@ ProjectSection(SolutionItems) = preProject
 	azure-pipelines.yml = azure-pipelines.yml
 EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcFsCore.Experiments", "ProcFsCore.Experiments\ProcFsCore.Experiments.csproj", "{5C0C17EC-64A0-43AA-9A56-50D7E44ECB77}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,5 +31,9 @@ Global
 		{3D689733-5265-4002-9AF7-10C6715EBB4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D689733-5265-4002-9AF7-10C6715EBB4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3D689733-5265-4002-9AF7-10C6715EBB4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C0C17EC-64A0-43AA-9A56-50D7E44ECB77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C0C17EC-64A0-43AA-9A56-50D7E44ECB77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C0C17EC-64A0-43AA-9A56-50D7E44ECB77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C0C17EC-64A0-43AA-9A56-50D7E44ECB77}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
