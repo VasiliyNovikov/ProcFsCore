@@ -207,7 +207,9 @@ namespace ProcFsCore
                     yield return Link.Read(linkFile);
             }
         }
-        
+
+        public ProcessIO IO => ProcessIO.Get(Pid);
+
         public static Process Current => new Process(CurrentPid);
         
         public Process(int pid)

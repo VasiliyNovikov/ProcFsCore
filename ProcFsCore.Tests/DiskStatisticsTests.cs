@@ -15,7 +15,7 @@ namespace ProcFsCore.Tests
                 void Verify(in DiskStatistics.Operation op)
                 {
                     Assert.IsTrue(op.Count > 0, "Count > 0");
-                    Assert.IsTrue(op.Sectors > 0, "Sectors > 0");
+                    Assert.IsTrue(op.Bytes > 0, "Bytes > 0");
                     Assert.IsTrue(op.Time > 0, "Time > 0");
                 }
                 

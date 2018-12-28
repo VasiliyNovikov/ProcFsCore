@@ -6,12 +6,13 @@ namespace ProcFsCore
     public struct DiskStatistics
     {
         private const string DiskStatsPath = ProcFs.RootPath + "/diskstats";
+        private const long SectorSize = 512; 
 
         public string DeviceName { get; }
 
         public readonly Operation Reads;
         public readonly Operation Writes;
-        
+
         public double TotalTime { get; }
         public double TotalWeightedTime { get; }
 
@@ -67,14 +68,14 @@ namespace ProcFsCore
         {
             public long Count { get; }
             public long Merged { get; }
-            public long Sectors { get; }
+            public long Bytes { get; }
             public double Time { get; }
 
-            private Operation(long count, long merged, long sectors, double time)
+            private Operation(long count, long merged, long bytes, double time)
             {
                 Count = count;
                 Merged = merged;
-                Sectors = sectors;
+                Bytes = bytes;
                 Time = time;
             }
 
@@ -84,7 +85,7 @@ namespace ProcFsCore
                 var merged = reader.ReadInt64();
                 var sectors = reader.ReadInt64();
                 var time = reader.ReadInt64() / 1_000_000.0;
-                return new Operation(count, merged, sectors, time);
+                return new Operation(count, merged, sectors * SectorSize, time);
             }
         }
     }

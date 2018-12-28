@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -112,6 +113,65 @@ namespace ProcFsCore.Tests
                                                        .INode;
                 Assert.IsTrue(links.Any(l => l.Type == LinkType.Socket && l.INode == expectedINode));
             }
+        }
+        
+        [TestMethod]
+        public void Process_Current_IO_Test()
+        {
+            const int mb = 1048576;
+            const int fileSizeMb = 128;
+            const int ioErrorDelta = mb / 16;
+
+            var process = Process.Current;
+            var initialIoStats = process.IO;
+
+            var tmpFile = Path.GetTempFileName();
+            try
+            {
+                var rnd = new Random();
+                Span<byte> buffer = stackalloc byte[mb];
+                using (var file = File.OpenWrite(tmpFile))
+                {
+                    for (var i = 0; i < fileSizeMb; ++i)
+                    {
+                        rnd.NextBytes(buffer);
+                        file.Write(buffer);
+                    }
+                }
+
+                using (var file = File.OpenRead(tmpFile))
+                {
+                    while (file.Read(buffer) > 0)
+                    {
+                    }
+                }
+            }
+            finally
+            {
+                File.Delete(tmpFile);                
+            }
+            
+            Console.WriteLine("Test");
+            
+            var ioStats = process.IO;
+            // Assert.IsTrue(ioStats.Read.Bytes > 0, "Read.Bytes > 0"); // Not sure how to initiate a read directly from disk - it seems always comes from cache
+            Assert.IsTrue(ioStats.Read.Characters > 0, "Read.Characters > 0");
+            Assert.IsTrue(ioStats.Read.Characters >= ioStats.Read.Bytes, "Read.Characters >= Read.Bytes");
+            Assert.IsTrue(ioStats.Read.SysCalls > 0, "Read.SysCalls > 0");
+            Assert.IsTrue(ioStats.Read.Characters > initialIoStats.Read.Characters, "Read.Characters > initial.Read.Characters");
+            Assert.IsTrue(ioStats.Read.SysCalls > initialIoStats.Read.SysCalls, "Read.SysCalls > initial.Read.SysCalls");
+            Assert.AreEqual(mb * fileSizeMb, ioStats.Read.Characters - initialIoStats.Read.Characters, ioErrorDelta);
+            
+            
+            Assert.IsTrue(ioStats.Write.Bytes > 0, "Write.Bytes > 0");
+            Assert.IsTrue(ioStats.Write.Characters > 0, "Write.Characters > 0");
+            Assert.IsTrue(ioStats.Write.Characters > ioStats.Write.Bytes, "Write.Characters > Write.Bytes");
+            Assert.IsTrue(ioStats.Write.SysCalls > 0, "Write.SysCalls > 0");
+            Assert.IsTrue(ioStats.Write.Characters > initialIoStats.Write.Characters, "Write.Characters > initial.Write.Characters");
+            Assert.IsTrue(ioStats.Write.Bytes > initialIoStats.Write.Bytes, "Write.Bytes > initial.Write.Bytes");
+            Assert.IsTrue(ioStats.Write.SysCalls > initialIoStats.Write.SysCalls, "Write.SysCalls > initial.Write.SysCalls");
+            Assert.AreEqual(mb * fileSizeMb, ioStats.Write.Characters - initialIoStats.Write.Characters, ioErrorDelta);
+            Assert.AreEqual(mb * fileSizeMb, ioStats.Write.Bytes - initialIoStats.Write.Bytes, ioErrorDelta);
         }
     }
 }
