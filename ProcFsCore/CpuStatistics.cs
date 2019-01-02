@@ -19,7 +19,8 @@ namespace ProcFsCore
         private static readonly ReadOnlyMemory<byte> CpuNumberStart = "cpu".ToUtf8();
         internal static IEnumerable<CpuStatistics> GetAll()
         {
-            using (var statReader = new Utf8FileReader(StatPath))
+            var statReader = new Utf8FileReader<X4096>(StatPath);
+            try
             {
                 while (!statReader.EndOfStream)
                 {
@@ -36,7 +37,7 @@ namespace ProcFsCore
                         Utf8Parser.TryParse(cpuNumberStr, out short num, out _);
                         cpuNumber = num;
                     }
-                    
+
                     var ticksPerSecond = (double) ProcFs.TicksPerSecond;
                     var userTime = statReader.ReadInt64() / ticksPerSecond;
                     var niceTime = statReader.ReadInt64() / ticksPerSecond;
@@ -45,7 +46,7 @@ namespace ProcFsCore
                     statReader.SkipWord();
                     var irqTime = statReader.ReadInt64() / ticksPerSecond;
                     var softIrqTime = statReader.ReadInt64() / ticksPerSecond;
-                    
+
                     statReader.SkipLine();
 
                     yield return new CpuStatistics
@@ -59,6 +60,10 @@ namespace ProcFsCore
                         SoftIrqTime = softIrqTime
                     };
                 }
+            }
+            finally
+            {
+                statReader.Dispose();
             }
         }
     }

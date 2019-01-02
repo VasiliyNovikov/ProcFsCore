@@ -16,7 +16,8 @@ namespace ProcFsCore
         private static readonly ReadOnlyMemory<byte> StatNameSeparators = ": ".ToUtf8();
         public static ProcessIO Get(int pid)
         {
-            using (var statReader = new Utf8FileReader($"{ProcFs.RootPath}/{pid}/io"))
+            var statReader = new Utf8FileReader<X256>($"{ProcFs.RootPath}/{pid}/io");
+            try
             {
                 statReader.SkipFragment(StatNameSeparators.Span);
                 var readCharacters = statReader.ReadInt64();
@@ -33,6 +34,10 @@ namespace ProcFsCore
                 
                 return new ProcessIO(new Direction(readCharacters, readBytes, readSysCalls),
                     new Direction(writeCharacters, writeBytes, writeSysCalls));
+            }
+            finally
+            {
+                statReader.Dispose();
             }
         }
         

@@ -25,7 +25,7 @@ namespace ProcFsCore
         
         internal static IEnumerable<NetArpEntry> Get(string netArpPath)
         {
-            var statReader = new Utf8FileReader(netArpPath);
+            var statReader = new Utf8FileReader<X1024>(netArpPath);
             try
             {
                 statReader.SkipLine();

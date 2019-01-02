@@ -11,7 +11,8 @@ namespace ProcFsCore
 
         static NetStatistics()
         {
-            using (var statReader = new Utf8FileReader(NetDevPath))
+            var statReader = new Utf8FileReader<X512>(NetDevPath);
+            try
             {
                 statReader.SkipLine();
                 statReader.SkipFragment('|');
@@ -30,6 +31,10 @@ namespace ProcFsCore
                 }
                 ReceiveColumnCount = receiveColumnCount;
             }
+            finally
+            {
+                statReader.Dispose();   
+            }
         }
         
         public string InterfaceName { get; }
@@ -47,7 +52,7 @@ namespace ProcFsCore
 
         internal static IEnumerable<NetStatistics> GetAll()
         {
-            var statReader = new Utf8FileReader(NetDevPath);
+            var statReader = new Utf8FileReader<X2048>(NetDevPath);
             try
             {
                 statReader.SkipLine();
@@ -90,7 +95,8 @@ namespace ProcFsCore
                 Drops = drops;
             }
 
-            internal static Direction Parse(ref Utf8FileReader reader)
+            internal static Direction Parse<TReader>(ref TReader reader)
+                where TReader : struct, IUtf8Reader
             {
                 var bytes = reader.ReadInt64();
                 var packets = reader.ReadInt64();

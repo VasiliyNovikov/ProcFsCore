@@ -4,9 +4,9 @@
         <LangVersion>latest</LangVersion>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-        <AssemblyVersion>0.1.3.0</AssemblyVersion>
-        <FileVersion>0.1.3.0</FileVersion>
-        <Version>0.1.3</Version>
+        <AssemblyVersion>0.1.4.0</AssemblyVersion>
+        <FileVersion>0.1.4.0</FileVersion>
+        <Version>0.1.4</Version>
         <Authors>Vasiliy Novikov</Authors>
         <Description>Lightweight .NET Core procfs wrapper</Description>
         <PackageTags>linux;procfs</PackageTags>
@@ -16,4 +16,7 @@
         <RepositoryUrl>https://github.com/VasiliyNovikov/ProcFsCore</RepositoryUrl>
         <RepositoryType>GitHub</RepositoryType>
     </PropertyGroup>
+    <ItemGroup>
+      <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.2" />
+    </ItemGroup>
 </Project>

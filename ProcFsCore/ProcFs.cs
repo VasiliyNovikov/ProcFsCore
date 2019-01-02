@@ -24,10 +24,8 @@ namespace ProcFsCore
                 {
                     if (_bootTimeUtc == null || BootTimeCacheTimer.Elapsed > BootTimeCacheInterval)
                     {
-                        // '/proc/stat -> btime' gets the boot time.
-                        // btime is the time of system boot in seconds since the Unix epoch.
-                        // It includes suspended time and is updated based on the system time (settimeofday).
-                        using (var statReader = new Utf8FileReader(StatPath))
+                        var statReader = new Utf8FileReader<X4096>(StatPath);
+                        try
                         {
                             statReader.SkipFragment(BtimeStr.Span, true);
                             if (statReader.EndOfStream)
@@ -36,6 +34,10 @@ namespace ProcFsCore
                             var bootTimeSeconds = statReader.ReadInt64();
                             _bootTimeUtc = DateTime.UnixEpoch + TimeSpan.FromSeconds(bootTimeSeconds);
                             BootTimeCacheTimer.Restart();
+                        }
+                        finally
+                        {
+                            statReader.Dispose();
                         }
                     }
 

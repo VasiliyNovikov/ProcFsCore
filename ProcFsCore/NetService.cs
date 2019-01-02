@@ -61,7 +61,7 @@ namespace ProcFsCore
         private static IEnumerable<NetService> Get(NetServiceType type, NetAddressVersion? addressVersion)
         {
             var serviceFile = NetServiceFiles[(int) type, (addressVersion ?? NetAddressVersion.IPv4) == NetAddressVersion.IPv4 ? 0 : 1];
-            var statReader = new Utf8FileReader(serviceFile);
+            var statReader = new Utf8FileReader<X256>(serviceFile);
             try
             {
                 statReader.SkipLine();
@@ -96,7 +96,7 @@ namespace ProcFsCore
                         lineReader.SkipWord();
                         var state = (NetServiceState)lineReader.ReadInt16('x');
                         var iNode = lineReader.ReadInt32();
-                        var path = lineReader.EndOfSpan ? null : lineReader.ReadStringWord();
+                        var path = lineReader.EndOfStream ? null : lineReader.ReadStringWord();
 
                         yield return new NetService(type, default, default, path, state, iNode);
                     }

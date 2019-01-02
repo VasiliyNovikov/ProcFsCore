@@ -19,7 +19,8 @@ namespace ProcFsCore
 
         internal static unsafe MemoryStatistics Get()
         {
-            using (var statReader = new Utf8FileReader(StatPath))
+            var statReader = new Utf8FileReader<X2048>(StatPath);
+            try
             {
                 var sections = stackalloc long[(int) Section.Max];
                 for (var i = 0; i < (int) Section.Max; ++i)
@@ -64,6 +65,10 @@ namespace ProcFsCore
                     SwapTotal = sections[(int) Section.SwapTotal],
                     SwapFree = sections[(int) Section.SwapFree]
                 };
+            }
+            finally
+            {
+                statReader.Dispose();
             }
         }
 

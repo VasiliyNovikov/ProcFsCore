@@ -171,7 +171,7 @@ namespace ProcFsCore
                 {
                     try
                     {
-                        using (var cmdLineBuffer = Buffer.FromFile($"{ProcFs.RootPath}/{Pid}/cmdline"))
+                        using (var cmdLineBuffer = Buffer<byte, X256>.FromFile($"{ProcFs.RootPath}/{Pid}/cmdline"))
                         {
                             cmdLineBuffer.Span.Replace('\0', ' ');
                             var cmdLineSpan = cmdLineBuffer.Span.Trim();
@@ -229,7 +229,8 @@ namespace ProcFsCore
             _initialized = false;
             _commandLine = null;
             _startTimeUtc = null;
-            using (var statReader = new Utf8FileReader($"{ProcFs.RootPath}/{Pid}/stat"))
+            var statReader = new Utf8FileReader<X512>($"{ProcFs.RootPath}/{Pid}/stat");
+            try
             {
                 // See http://man7.org/linux/man-pages/man5/proc.5.html /proc/[pid]/stat section
 
@@ -305,6 +306,10 @@ namespace ProcFsCore
 
                 // (24) rss
                 _residentSetSize = statReader.ReadInt64() * Environment.SystemPageSize;
+            }
+            finally
+            {
+                statReader.Dispose();
             }
 
             _initialized = true;

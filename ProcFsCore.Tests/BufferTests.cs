@@ -1,5 +1,8 @@
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Buffer16 = ProcFsCore.Buffer<byte, ProcFsCore.X16>;
+using Buffer64 = ProcFsCore.Buffer<byte, ProcFsCore.X64>;
+using Buffer512 = ProcFsCore.Buffer<byte, ProcFsCore.X512>;
 
 namespace ProcFsCore.Tests
 {
@@ -13,7 +16,7 @@ namespace ProcFsCore.Tests
         {
             Span<byte> data = stackalloc byte[32];
             _rnd.NextBytes(data);
-            using (var buffer = new Buffer(data.Length))
+            using (var buffer = new Buffer64(data.Length))
             {
                 data.CopyTo(buffer.Span);
                 Assert.IsTrue(data.SequenceEqual(buffer.Span));
@@ -23,9 +26,9 @@ namespace ProcFsCore.Tests
         [TestMethod]
         public void Buffer_High_Capacity_Test()
         {
-            Span<byte> data = stackalloc byte[Buffer.MinimumCapacity * 2];
+            Span<byte> data = stackalloc byte[Buffer64.MinimumCapacity * 2];
             _rnd.NextBytes(data);
-            using (var buffer = new Buffer(data.Length))
+            using (var buffer = new Buffer64(data.Length))
             {
                 data.CopyTo(buffer.Span);
                 Assert.IsTrue(data.SequenceEqual(buffer.Span));
@@ -37,7 +40,7 @@ namespace ProcFsCore.Tests
         {
             Span<byte> data = stackalloc byte[16];
             _rnd.NextBytes(data);
-            using (var buffer = new Buffer(data.Length))
+            using (var buffer = new Buffer512(data.Length))
             {
                 data.CopyTo(buffer.Span);
                 buffer.Resize(data.Length * 4);
@@ -48,9 +51,9 @@ namespace ProcFsCore.Tests
         [TestMethod]
         public void Buffer_Resize_High_High_Capacity_Test()
         {
-            Span<byte> data = stackalloc byte[Buffer.MinimumCapacity * 2];
+            Span<byte> data = stackalloc byte[Buffer64.MinimumCapacity * 2];
             _rnd.NextBytes(data);
-            using (var buffer = new Buffer(data.Length))
+            using (var buffer = new Buffer64(data.Length))
             {
                 data.CopyTo(buffer.Span);
                 buffer.Resize(data.Length * 8);
@@ -63,10 +66,10 @@ namespace ProcFsCore.Tests
         {
             Span<byte> data = stackalloc byte[16];
             _rnd.NextBytes(data);
-            using (var buffer = new Buffer(data.Length))
+            using (var buffer = new Buffer64(data.Length))
             {
                 data.CopyTo(buffer.Span);
-                buffer.Resize(Buffer.MinimumCapacity * 2);
+                buffer.Resize(Buffer64.MinimumCapacity * 2);
                 Assert.IsTrue(data.SequenceEqual(buffer.Span.Slice(0, data.Length)));
             }
         }
@@ -74,9 +77,9 @@ namespace ProcFsCore.Tests
         [TestMethod]
         public void Buffer_Resize_High_Low_Capacity_Test()
         {
-            Span<byte> data = stackalloc byte[Buffer.MinimumCapacity * 2];
+            Span<byte> data = stackalloc byte[Buffer64.MinimumCapacity * 2];
             _rnd.NextBytes(data);
-            using (var buffer = new Buffer(data.Length))
+            using (var buffer = new Buffer64(data.Length))
             {
                 data.CopyTo(buffer.Span);
                 buffer.Resize(16);
@@ -89,41 +92,38 @@ namespace ProcFsCore.Tests
         {
             Allocate();
             
-            var bufferRef = new BufferRef(16);
-            using (bufferRef.Value)
-            {
-                var initialSpan = Fill(bufferRef, out var initialPtr);
+            var bufferRef = new BufferRef();
+            var initialSpan = Fill(bufferRef, out var initialPtr);
 
-                GC.Collect(GC.MaxGeneration);
-                GC.Collect(GC.MaxGeneration);
-                
-                var finalSpan = Fill(bufferRef, out var finalPtr);
+            GC.Collect(GC.MaxGeneration);
+            GC.Collect(GC.MaxGeneration);
+            
+            var finalSpan = Fill(bufferRef, out var finalPtr);
 
-                Assert.IsTrue(initialSpan.SequenceEqual(finalSpan));
-                Assert.AreEqual(initialPtr, finalPtr);
-            }
+            Assert.IsTrue(initialSpan.SequenceEqual(finalSpan));
+            Assert.AreEqual(initialPtr, finalPtr);
         }
 
         private static void Allocate()
         {
-            for (var i = 0; i < 64; i++)
-                GC.KeepAlive(new byte[64]);
+            for (var i = 0; i < 1024; i++)
+                GC.KeepAlive(new BufferRef());
         }
 
-        private unsafe Span<byte> Fill(BufferRef bufferRef, out IntPtr ptr)
+        private unsafe Span<byte> Fill(BufferRef bufferRef, out long ptr)
         {
             var span = bufferRef.Value.Span;
             _rnd.NextBytes(span);
             fixed (byte* p = &span.GetPinnableReference())
-                ptr = (IntPtr) p;
+                ptr = ((IntPtr) p).ToInt64();
             return span;
         }
 
         private class BufferRef
         {
-            public readonly Buffer Value;
+            public readonly Buffer16 Value;
 
-            public BufferRef(int length) => Value = new Buffer(length);
+            public BufferRef() => Value = new Buffer16(Buffer16.MinimumCapacity);
         }
 
         [TestMethod]

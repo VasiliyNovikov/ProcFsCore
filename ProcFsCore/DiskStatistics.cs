@@ -30,7 +30,7 @@ namespace ProcFsCore
         {
             // http://man7.org/linux/man-pages/man5/proc.5.html
             // https://www.kernel.org/doc/Documentation/iostats.txt
-            var statReader = new Utf8FileReader(DiskStatsPath);
+            var statReader = new Utf8FileReader<X1024>(DiskStatsPath);
             try
             {
                 while (!statReader.EndOfStream)
@@ -79,7 +79,8 @@ namespace ProcFsCore
                 Time = time;
             }
 
-            internal static Operation Parse(ref Utf8FileReader reader)
+            internal static Operation Parse<TReader>(ref TReader reader)
+                where TReader : struct, IUtf8Reader
             {
                 var count = reader.ReadInt64();
                 var merged = reader.ReadInt64();

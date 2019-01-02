@@ -1,31 +1,35 @@
 using System;
 using System.Buffers;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace ProcFsCore
 {
-    public unsafe struct Buffer : IDisposable
+    public struct Buffer<T, TFixed> : IDisposable
+        where T : unmanaged
+        where TFixed : unmanaged, IFixedBuffer
     {
-        public const int MinimumCapacity = 512;
+        public static readonly int MinimumCapacity = Unsafe.SizeOf<TFixed>() / Unsafe.SizeOf<T>();
 
-        private byte[] _rentedBuffer;
-#pragma warning disable 649
-        private fixed byte _fixedBuffer[MinimumCapacity];
-#pragma warning restore 649
+        private T[] _rentedBuffer;
+        // ReSharper disable FieldCanBeMadeReadOnly.Local
+        private TFixed _fixedBuffer; // It must be non-readonly otherwise it will always load the copy of it to stack instead of reference
+        // ReSharper restore FieldCanBeMadeReadOnly.Local
 
         public int Length { get; private set; }
 
-        public Span<byte> Span
+        public Span<T> Span
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 if (Length == 0)
                     return default;
 
                 return _rentedBuffer == null
-                    ? MemoryMarshal.CreateSpan(ref _fixedBuffer[0], Length)
-                    : new Span<byte>(_rentedBuffer, 0, Length);
+                    ? MemoryMarshal.Cast<byte, T>(_fixedBuffer.Span).Slice(0, Length)
+                    : new Span<T>(_rentedBuffer, 0, Length);
             }
         }
 
@@ -33,7 +37,8 @@ namespace ProcFsCore
         {
             if (length < 0) throw new ArgumentOutOfRangeException(nameof(length));
             Length = length;
-            _rentedBuffer = Length > MinimumCapacity ? ArrayPool<byte>.Shared.Rent(Length) : null;
+            _rentedBuffer = Length > MinimumCapacity ? ArrayPool<T>.Shared.Rent(Length) : null;
+            _fixedBuffer = default;
         }
 
         public void Resize(int newLength)
@@ -44,10 +49,10 @@ namespace ProcFsCore
                 var currentBufferCapacity = Length > MinimumCapacity ? _rentedBuffer.Length : MinimumCapacity;
                 if (newLength > currentBufferCapacity)
                 {
-                    var newBuffer = ArrayPool<byte>.Shared.Rent(newLength);
+                    var newBuffer = ArrayPool<T>.Shared.Rent(newLength);
                     Span.CopyTo(newBuffer);
                     if (_rentedBuffer != null)
-                        ArrayPool<byte>.Shared.Return(_rentedBuffer);
+                        ArrayPool<T>.Shared.Return(_rentedBuffer);
                     _rentedBuffer = newBuffer;
                 }
             }
@@ -59,19 +64,19 @@ namespace ProcFsCore
         {
             if (_rentedBuffer != null)
             {
-                ArrayPool<byte>.Shared.Return(_rentedBuffer);
+                ArrayPool<T>.Shared.Return(_rentedBuffer);
                 _rentedBuffer = null;
             }
             Length = 0;
         }
 
-        public static Buffer FromStream(Stream stream, int? estimatedLength = null)
+        public static Buffer<byte, TFixed> FromStream(Stream stream, int? estimatedLength = null)
         {
             var actualEstimatedLength = estimatedLength ?? (stream.CanSeek ? (int)stream.Length : MinimumCapacity);
             if (actualEstimatedLength == 0)
                 actualEstimatedLength = MinimumCapacity;
             
-            var buffer = new Buffer(actualEstimatedLength);
+            var buffer = new Buffer<byte, TFixed>(actualEstimatedLength);
             var totalReadBytes = 0;
             while (true)
             {
@@ -87,7 +92,7 @@ namespace ProcFsCore
             return buffer;
         }
 
-        public static Buffer FromFile(string fileName, int? estimatedLength = null)
+        public static Buffer<byte, TFixed> FromFile(string fileName, int? estimatedLength = null)
         {
             using (var stream = File.OpenRead(fileName))
                 return FromStream(stream, estimatedLength);
