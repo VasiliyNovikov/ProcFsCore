@@ -5,8 +5,34 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace ProcFsCore.Tests
 {
     [TestClass]
-    public class StructUsingSemanticsTests
+    public class PlatformTests
     {
+        [TestMethod]
+        public void Span_Overlapped_Copy_Forward_Test()
+        {
+            Span<byte> data = stackalloc byte[0x2000];
+            new Random().NextBytes(data);
+            
+            Span<byte> span = stackalloc byte[0x3000];
+            data.CopyTo(span);
+            
+            span.Slice(0, 0x2000).CopyTo(span.Slice(0x1000));
+            Assert.IsTrue(span.Slice(0x1000).SequenceEqual(data));
+        }
+
+        [TestMethod]
+        public void Span_Overlapped_Copy_Backwards_Test()
+        {
+            Span<byte> data = stackalloc byte[0x2000];
+            new Random().NextBytes(data);
+            
+            Span<byte> span = stackalloc byte[0x3000];
+            data.CopyTo(span.Slice(0x1000));
+            
+            span.Slice(0x1000).CopyTo(span);
+            Assert.IsTrue(span.Slice(0, 0x2000).SequenceEqual(data));
+        }
+        
         [TestMethod]
         public void StructUsingSemantics_InPlace_NoClosure_Test()
         {

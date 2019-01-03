@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Buffer16 = ProcFsCore.Buffer<byte, ProcFsCore.X16>;
 using Buffer64 = ProcFsCore.Buffer<byte, ProcFsCore.X64>;
@@ -86,69 +85,6 @@ namespace ProcFsCore.Tests
                 buffer.Resize(16);
                 Assert.IsTrue(data.Slice(0, buffer.Span.Length).SequenceEqual(buffer.Span));
             }
-        }
-
-        [TestMethod, MethodImpl(MethodImplOptions.NoOptimization)]
-        public void Buffer_GC_Move_Test()
-        {
-            var allocated = new byte[16];
-            
-            var bufferRef = new BufferRef();
-            var initialSpan = Fill(bufferRef, out var initialPtr);
-
-            GC.KeepAlive(allocated);
-            // ReSharper disable RedundantAssignment
-            allocated = null;
-            // ReSharper restore RedundantAssignment
-
-            GC.Collect(GC.MaxGeneration);
-            
-            var finalSpan = Fill(bufferRef, out var finalPtr);
-
-            Assert.IsTrue(initialSpan.SequenceEqual(finalSpan));
-            Assert.AreEqual(initialPtr, finalPtr);
-        }
-
-        private unsafe Span<byte> Fill(BufferRef bufferRef, out long ptr)
-        {
-            var span = bufferRef.Value.Span;
-            _rnd.NextBytes(span);
-            fixed (byte* p = &span.GetPinnableReference())
-                ptr = ((IntPtr) p).ToInt64();
-            return span;
-        }
-
-        private class BufferRef
-        {
-            public readonly Buffer16 Value;
-
-            public BufferRef() => Value = new Buffer16(Buffer16.MinimumCapacity);
-        }
-
-        [TestMethod]
-        public void Span_Overlapped_Copy_Forward_Test()
-        {
-            Span<byte> data = stackalloc byte[0x2000];
-            _rnd.NextBytes(data);
-            
-            Span<byte> span = stackalloc byte[0x3000];
-            data.CopyTo(span);
-            
-            span.Slice(0, 0x2000).CopyTo(span.Slice(0x1000));
-            Assert.IsTrue(span.Slice(0x1000).SequenceEqual(data));
-        }
-
-        [TestMethod]
-        public void Span_Overlapped_Copy_Backwards_Test()
-        {
-            Span<byte> data = stackalloc byte[0x2000];
-            _rnd.NextBytes(data);
-            
-            Span<byte> span = stackalloc byte[0x3000];
-            data.CopyTo(span.Slice(0x1000));
-            
-            span.Slice(0x1000).CopyTo(span);
-            Assert.IsTrue(span.Slice(0, 0x2000).SequenceEqual(data));
         }
     }
 }
