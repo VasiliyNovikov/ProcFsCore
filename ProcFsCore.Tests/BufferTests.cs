@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Buffer16 = ProcFsCore.Buffer<byte, ProcFsCore.X16>;
 using Buffer64 = ProcFsCore.Buffer<byte, ProcFsCore.X64>;
@@ -87,27 +88,25 @@ namespace ProcFsCore.Tests
             }
         }
 
-        [TestMethod]
+        [TestMethod, MethodImpl(MethodImplOptions.NoOptimization)]
         public void Buffer_GC_Move_Test()
         {
-            Allocate();
+            var allocated = new byte[16];
             
             var bufferRef = new BufferRef();
             var initialSpan = Fill(bufferRef, out var initialPtr);
 
-            GC.Collect(GC.MaxGeneration);
+            GC.KeepAlive(allocated);
+            // ReSharper disable RedundantAssignment
+            allocated = null;
+            // ReSharper restore RedundantAssignment
+
             GC.Collect(GC.MaxGeneration);
             
             var finalSpan = Fill(bufferRef, out var finalPtr);
 
             Assert.IsTrue(initialSpan.SequenceEqual(finalSpan));
             Assert.AreEqual(initialPtr, finalPtr);
-        }
-
-        private static void Allocate()
-        {
-            for (var i = 0; i < 1024; i++)
-                GC.KeepAlive(new BufferRef());
         }
 
         private unsafe Span<byte> Fill(BufferRef bufferRef, out long ptr)
