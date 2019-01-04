@@ -162,6 +162,7 @@ namespace ProcFsCore
             }
         }
 
+        private static readonly Func<char, bool> ZeroPredicate = ch => ch == '\0';
         private string _commandLine;
         public string CommandLine
         {
@@ -173,8 +174,7 @@ namespace ProcFsCore
                     {
                         using (var cmdLineBuffer = Buffer<byte, X256>.FromFile($"{ProcFs.RootPath}/{Pid}/cmdline"))
                         {
-                            cmdLineBuffer.Span.Replace('\0', ' ');
-                            var cmdLineSpan = cmdLineBuffer.Span.Trim();
+                            var cmdLineSpan = cmdLineBuffer.Span.Trim(ZeroPredicate);
                             _commandLine = cmdLineSpan.IsEmpty ? "" : cmdLineSpan.ToUtf8String();
                         }
                     }

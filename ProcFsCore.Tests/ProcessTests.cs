@@ -66,7 +66,7 @@ namespace ProcFsCore.Tests
             {
                 var pi = new Process(process.Id);
                 VerifyProcess(pi, process);
-                Assert.AreEqual("sleep 1000", pi.CommandLine);
+                Assert.AreEqual("sleep\01000", pi.CommandLine);
             }
             finally
             {
