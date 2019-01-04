@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 
 namespace ProcFsCore
 {
@@ -9,7 +8,7 @@ namespace ProcFsCore
         internal static readonly ReadOnlyMemory<byte> DefaultWhiteSpaces = " \n \t\v\f\r\x0085".ToUtf8();
         internal static readonly ReadOnlyMemory<byte> DefaultLineSeparators = "\n\r".ToUtf8();
 
-        private readonly Stream _stream;
+        private LightFileStream _stream;
         private readonly ReadOnlyMemory<byte> _whiteSpaces;
         private readonly ReadOnlyMemory<byte> _lineSeparators;
 
@@ -26,7 +25,7 @@ namespace ProcFsCore
 
         public Utf8FileReader(string fileName, int? initialBufferSize = null, ReadOnlyMemory<byte>? whiteSpaces = null, ReadOnlyMemory<byte>? lineSeparators = null)
         {
-            _stream = File.OpenRead(fileName);
+            _stream = LightFileStream.OpenRead(fileName);
             _whiteSpaces = whiteSpaces ?? DefaultWhiteSpaces;
             _lineSeparators = lineSeparators ?? DefaultLineSeparators;
 

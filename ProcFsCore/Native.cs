@@ -19,14 +19,14 @@ namespace ProcFsCore
         }
         
         [DllImport("libc", EntryPoint = "readlink", SetLastError = true)]
-        private static extern unsafe IntPtr ReadLink(string path, byte* buffer, IntPtr bufferSize);
+        private static extern unsafe IntPtr ReadLink(string path, void* buffer, IntPtr bufferSize);
 
         public static unsafe Buffer<byte, X256> ReadLink(string path)
         {
             var buffer = new Buffer<byte, X256>(Buffer<byte, X256>.MinimumCapacity);
             while (true)
             {
-                fixed (byte* bufferPtr = &buffer.Span.GetPinnableReference())
+                fixed (void* bufferPtr = &buffer.Span.GetPinnableReference())
                 {
 
                     var readSize = ReadLink(path, bufferPtr, new IntPtr(buffer.Length)).ToInt32();
@@ -40,6 +40,51 @@ namespace ProcFsCore
                 }
 
                 buffer.Resize(buffer.Length * 2);
+            }
+        }
+
+        [DllImport("libc", EntryPoint = "open", SetLastError = true)]
+        private static extern int OpenRaw(string path, int flags);
+        public static int Open(string path, int flags)
+        {
+            var descriptor = OpenRaw(path, flags);
+            if (descriptor == -1)
+                throw new Win32Exception();
+            return descriptor;
+        }
+        
+        [DllImport("libc", EntryPoint = "close", SetLastError = true)]
+        private static extern int CloseRaw(int descriptor);
+        public static void Close(int descriptor)
+        {
+            if (CloseRaw(descriptor) == -1)
+                throw new Win32Exception();  
+        }
+        
+        
+        [DllImport("libc", EntryPoint = "read", SetLastError = true)]
+        private static extern unsafe IntPtr Read(int descriptor, void* buffer, IntPtr bufferSize);
+        public static unsafe int Read(int descriptor, Span<byte> buffer)
+        {
+            fixed (void* bufferPtr = &buffer.GetPinnableReference())
+            {
+                var bytesRead = Read(descriptor, bufferPtr, new IntPtr(buffer.Length)).ToInt32();
+                if (bytesRead == -1)
+                    throw new Win32Exception();
+                return bytesRead;
+            }
+        }
+        
+        [DllImport("libc", EntryPoint = "write", SetLastError = true)]
+        private static extern unsafe IntPtr Write(int descriptor, void* buffer, IntPtr bufferSize);
+        public static unsafe int Write(int descriptor, ReadOnlySpan<byte> buffer)
+        {
+            fixed (void* bufferPtr = &buffer.GetPinnableReference())
+            {
+                var bytesWritten = Write(descriptor, bufferPtr, new IntPtr(buffer.Length)).ToInt32();
+                if (bytesWritten == -1)
+                    throw new Win32Exception();
+                return bytesWritten;
             }
         }
     }

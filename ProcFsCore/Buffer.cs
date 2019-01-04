@@ -1,6 +1,5 @@
 using System;
 using System.Buffers;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -70,32 +69,25 @@ namespace ProcFsCore
             Length = 0;
         }
 
-        public static Buffer<byte, TFixed> FromStream(Stream stream, int? estimatedLength = null)
+        public static Buffer<byte, TFixed> FromFile(string fileName)
         {
-            var actualEstimatedLength = estimatedLength ?? (stream.CanSeek ? (int)stream.Length : MinimumCapacity);
-            if (actualEstimatedLength == 0)
-                actualEstimatedLength = MinimumCapacity;
-            
-            var buffer = new Buffer<byte, TFixed>(actualEstimatedLength);
-            var totalReadBytes = 0;
-            while (true)
+            using (var stream = LightFileStream.OpenRead(fileName))
             {
-                var readBytes = stream.Read(buffer.Span.Slice(totalReadBytes));
-                if (readBytes == 0)
-                    break;
-                
-                totalReadBytes += readBytes;
-                if (totalReadBytes == buffer.Length)
-                    buffer.Resize(buffer.Length * 2);
-            }
-            buffer.Resize(totalReadBytes);
-            return buffer;
-        }
+                var buffer = new Buffer<byte, TFixed>(Buffer<byte, TFixed>.MinimumCapacity);
+                var totalReadBytes = 0;
+                while (true)
+                {
+                    var readBytes = stream.Read(buffer.Span.Slice(totalReadBytes));
+                    if (readBytes == 0)
+                        break;
 
-        public static Buffer<byte, TFixed> FromFile(string fileName, int? estimatedLength = null)
-        {
-            using (var stream = File.OpenRead(fileName))
-                return FromStream(stream, estimatedLength);
+                    totalReadBytes += readBytes;
+                    if (totalReadBytes == buffer.Length)
+                        buffer.Resize(buffer.Length * 2);
+                }
+                buffer.Resize(totalReadBytes);
+                return buffer;
+            }
         }
     }
 }
