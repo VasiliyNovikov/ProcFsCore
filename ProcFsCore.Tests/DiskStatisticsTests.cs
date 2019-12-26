@@ -8,6 +8,7 @@ namespace ProcFsCore.Tests
         [TestMethod]
         public void DiskStatistics_All_Test()
         {
+            var hasTotalTime = false;
             foreach (var stat in ProcFs.Disk.Statistics())
             {
                 Assert.IsNotNull(stat.DeviceName);
@@ -20,12 +21,16 @@ namespace ProcFsCore.Tests
                 }
                 
                 Verify(stat.Reads);
-                
-                Assert.IsTrue(stat.TotalTime > 0, "TotalTime > 0");
-                Assert.IsTrue(stat.TotalWeightedTime >= stat.TotalTime, "TotalWeightedTime >= TotalTime");
-                
-                Assert.AreEqual(stat.Reads.Time + stat.Writes.Time, stat.TotalWeightedTime, 0.5);
+
+                if (stat.TotalTime > 0)
+                {
+                    hasTotalTime = true;
+                    Assert.IsTrue(stat.TotalWeightedTime >= stat.TotalTime, "TotalWeightedTime >= TotalTime");
+                    Assert.AreEqual(stat.Reads.Time + stat.Writes.Time, stat.TotalWeightedTime, 0.5);
+                }
             }
+
+            Assert.IsTrue(hasTotalTime, "TotalTime > 0 for at least one disk");
         }
     }
 }
