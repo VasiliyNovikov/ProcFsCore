@@ -32,45 +32,46 @@ namespace ProcFsCore
         {
             // http://man7.org/linux/man-pages/man5/proc.5.html
             // https://www.kernel.org/doc/Documentation/iostats.txt
-            var statReader = new Utf8FileReader<X1024>(DiskStatsPath, whiteSpaces: WhiteSpaces);
+            var statsReader = new Utf8FileReader<X1024>(DiskStatsPath, whiteSpaces: WhiteSpaces);
             try
             {
-                while (!statReader.EndOfStream)
+                while (!statsReader.EndOfStream)
                 {
-                    statReader.SkipWhiteSpaces();
-                    statReader.SkipWord();
-                    statReader.SkipWord();
-
-                    var deviceName = statReader.ReadWord();
-                    if (deviceName.StartsWith(LoopDeviceStart.Span))
+                    var statLine = statsReader.ReadLine();
+                    var statReader = new Utf8SpanReader(statLine);
+                    try
                     {
-                        statReader.SkipLine();
-                        continue;                        
-                    }
+                        statReader.SkipWhiteSpaces();
+                        statReader.SkipWord();
+                        statReader.SkipWord();
 
-                    if (deviceName.SequenceEqual(Sr0DeviceName.Span))
+                        var deviceName = statReader.ReadWord();
+                        if (deviceName.StartsWith(LoopDeviceStart.Span))
+                            continue;                        
+
+                        if (deviceName.SequenceEqual(Sr0DeviceName.Span))
+                            continue;                        
+
+                        var deviceNameStr = deviceName.ToUtf8String();
+
+                        var reads = Operation.Parse(ref statReader);
+                        var writes = Operation.Parse(ref statReader);
+
+                        statReader.SkipWord();
+                        var totalTime = statReader.ReadInt64() / 1_000_000.0;
+                        var totalWeightedTime = statReader.ReadInt64() / 1_000_000.0;
+
+                        yield return new DiskStatistics(deviceNameStr, reads, writes, totalTime, totalWeightedTime);
+                    }
+                    finally
                     {
-                        statReader.SkipLine();
-                        continue;                        
+                        statReader.Dispose();
                     }
-
-                    var deviceNameStr = deviceName.ToUtf8String();
-
-                    var reads = Operation.Parse(ref statReader);
-                    var writes = Operation.Parse(ref statReader);
-
-                    statReader.SkipWord();
-                    var totalTime = statReader.ReadInt64() / 1_000_000.0;
-                    var totalWeightedTime = statReader.ReadInt64() / 1_000_000.0;
-
-                    yield return new DiskStatistics(deviceNameStr, reads, writes, totalTime, totalWeightedTime);
-
-                    statReader.SkipLine();
                 }
             }
             finally
             {
-                statReader.Dispose();
+                statsReader.Dispose();
             }
         }
 
