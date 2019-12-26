@@ -19,11 +19,11 @@ jobs:
       echo "/proc/diskstats:"
       cat /proc/diskstats
       echo ""
-      echo "/net/tcp:"
-      cat /net/tcp
+      echo "/proc/net/tcp:"
+      cat /proc/net/tcp
       echo ""
-      echo "/net/tcp6:"
-      cat /net/tcp6
+      echo "/proc/net/tcp6:"
+      cat /proc/net/tcp6
 
     displayName: Show stuff from procfs
 
