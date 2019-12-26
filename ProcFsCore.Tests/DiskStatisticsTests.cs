@@ -11,8 +11,6 @@ namespace ProcFsCore.Tests
             foreach (var stat in ProcFs.Disk.Statistics())
             {
                 Assert.IsNotNull(stat.DeviceName);
-                if (stat.DeviceName == "sr0")
-                    continue;
                 
                 void Verify(in DiskStatistics.Operation op)
                 {

@@ -26,6 +26,7 @@ namespace ProcFsCore
         }
 
         private static readonly ReadOnlyMemory<byte> LoopDeviceStart = "loop".ToUtf8();
+        private static readonly ReadOnlyMemory<byte> Sr0DeviceName = "sr0".ToUtf8();
         internal static IEnumerable<DiskStatistics> GetAll()
         {
             // http://man7.org/linux/man-pages/man5/proc.5.html
@@ -41,6 +42,12 @@ namespace ProcFsCore
 
                     var deviceName = statReader.ReadWord();
                     if (deviceName.StartsWith(LoopDeviceStart.Span))
+                    {
+                        statReader.SkipLine();
+                        continue;                        
+                    }
+
+                    if (deviceName.SequenceEqual(Sr0DeviceName.Span))
                     {
                         statReader.SkipLine();
                         continue;                        
