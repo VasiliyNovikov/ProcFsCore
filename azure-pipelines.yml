@@ -5,7 +5,7 @@ trigger:
 - master
 
 jobs:
-- job:
+- job: Test
   strategy:
     matrix:
       Test_Ubuntu_16:
@@ -65,8 +65,8 @@ jobs:
       artifactName: package
 
 - job: Publish
-  #dependsOn:
-  #- Test_Ubuntu_16
+  dependsOn:
+  - Test
   #- Test_Ubuntu_18
   condition: "and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))"
   pool:
