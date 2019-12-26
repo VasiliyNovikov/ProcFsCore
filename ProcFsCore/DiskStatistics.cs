@@ -25,13 +25,14 @@ namespace ProcFsCore
             TotalWeightedTime = totalWeightedTime;
         }
 
+        private static readonly ReadOnlyMemory<byte> WhiteSpaces = "  \t\v\f\x0085".ToUtf8();
         private static readonly ReadOnlyMemory<byte> LoopDeviceStart = "loop".ToUtf8();
         private static readonly ReadOnlyMemory<byte> Sr0DeviceName = "sr0".ToUtf8();
         internal static IEnumerable<DiskStatistics> GetAll()
         {
             // http://man7.org/linux/man-pages/man5/proc.5.html
             // https://www.kernel.org/doc/Documentation/iostats.txt
-            var statReader = new Utf8FileReader<X1024>(DiskStatsPath);
+            var statReader = new Utf8FileReader<X1024>(DiskStatsPath, whiteSpaces: WhiteSpaces);
             try
             {
                 while (!statReader.EndOfStream)
@@ -63,6 +64,8 @@ namespace ProcFsCore
                     var totalWeightedTime = statReader.ReadInt64() / 1_000_000.0;
 
                     yield return new DiskStatistics(deviceNameStr, reads, writes, totalTime, totalWeightedTime);
+
+                    statReader.SkipLine();
                 }
             }
             finally
