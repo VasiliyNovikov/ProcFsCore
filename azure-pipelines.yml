@@ -18,6 +18,12 @@ jobs:
   - bash: |
       echo "/proc/diskstats:"
       cat /proc/diskstats
+      echo ""
+      echo "/net/tcp:"
+      cat /net/tcp
+      echo ""
+      echo "/net/tcp6:"
+      cat /net/tcp6
 
     displayName: Show stuff from procfs
 
