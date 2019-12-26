@@ -7,11 +7,11 @@ trigger:
 jobs:
 - job:
   strategy:
-  matrix:
-    Test_Ubuntu_16:
-      imageName: ubuntu-16.04
-    Test_Ubuntu_18:
-      imageName: ubuntu-18.04
+    matrix:
+      Test_Ubuntu_16:
+        imageName: ubuntu-16.04
+      Test_Ubuntu_18:
+        imageName: ubuntu-18.04
   pool:
     vmImage: $(imageName)
   steps:
