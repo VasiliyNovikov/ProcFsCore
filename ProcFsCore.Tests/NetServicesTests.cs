@@ -87,7 +87,9 @@ namespace ProcFsCore.Tests
                                                   .ToArray();
                 var expectedServices = IPGlobalProperties.GetIPGlobalProperties()
                                                          .GetActiveTcpConnections()
+#if !NET3PLUS
                                                          .Where(s => s.State != TcpState.Listen)
+#endif
                                                          .ToArray();
                 Assert.AreEqual(expectedServices.Length, services.Length);
                 for (var i = 0; i < services.Length; ++i)
@@ -110,8 +112,16 @@ namespace ProcFsCore.Tests
                                                   .Concat(ProcFs.Net.Services.Tcp(NetAddressVersion.IPv6))
                                                   .Where(s => s.State == NetServiceState.Listen)
                                                   .ToArray();
+#if NET3PLUS
                 var expectedServices = IPGlobalProperties.GetIPGlobalProperties()
                                                          .GetActiveTcpListeners();
+#else
+                var expectedServices = IPGlobalProperties.GetIPGlobalProperties()
+                                                         .GetActiveTcpConnections()
+                                                         .Where(s => s.State == TcpState.Listen)
+                                                         .Select(s => s.LocalEndPoint)
+                                                         .ToArray();
+#endif
                 Assert.AreEqual(expectedServices.Length, services.Length);
                 for (var i = 0; i < services.Length; ++i)
                 {
