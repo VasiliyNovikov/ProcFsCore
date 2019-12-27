@@ -2,7 +2,7 @@ using System;
 
 namespace ProcFsCore
 {
-    public struct LightFileStream : IDisposable
+    public readonly struct LightFileStream : IDisposable
     {
         private readonly int _descriptor;
 

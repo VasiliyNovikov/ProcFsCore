@@ -163,7 +163,7 @@ namespace ProcFsCore
         }
 
         private static readonly Func<char, bool> ZeroPredicate = ch => ch == '\0';
-        private string _commandLine;
+        private string? _commandLine;
         public string CommandLine
         {
             get

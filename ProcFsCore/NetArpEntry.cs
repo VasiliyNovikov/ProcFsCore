@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace ProcFsCore
 {
-    public struct NetArpEntry
+    public readonly struct NetArpEntry
     {
         private const string NetArpPath = ProcFs.RootPath + "/net/arp";
         

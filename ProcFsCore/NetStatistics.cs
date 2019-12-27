@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ProcFsCore
 {
-    public struct NetStatistics
+    public readonly struct NetStatistics
     {
         private const string NetDevPath = ProcFs.RootPath + "/net/dev";
 
@@ -80,7 +80,7 @@ namespace ProcFsCore
             }
         }
 
-        public struct  Direction
+        public readonly struct  Direction
         {
             public long Bytes { get; }
             public long Packets { get; }

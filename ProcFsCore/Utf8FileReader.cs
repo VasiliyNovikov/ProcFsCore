@@ -8,7 +8,7 @@ namespace ProcFsCore
         internal static readonly ReadOnlyMemory<byte> DefaultWhiteSpaces = " \n \t\v\f\r\x0085".ToUtf8();
         internal static readonly ReadOnlyMemory<byte> DefaultLineSeparators = "\n\r".ToUtf8();
 
-        private LightFileStream _stream;
+        private readonly LightFileStream _stream;
         private readonly ReadOnlyMemory<byte> _whiteSpaces;
         private readonly ReadOnlyMemory<byte> _lineSeparators;
 

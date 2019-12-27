@@ -1,20 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <TargetFrameworks>netcoreapp2.1;netcoreapp2.2;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
-        <LangVersion>latest</LangVersion>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-        <Version>0.1.7</Version>
-        <Authors>Vasiliy Novikov</Authors>
-        <Description>Lightweight .NET Core procfs wrapper</Description>
-        <PackageTags>linux;procfs</PackageTags>
-        <PackageProjectUrl>https://github.com/VasiliyNovikov/ProcFsCore</PackageProjectUrl>
-        <PackageLicenseUrl>https://raw.githubusercontent.com/VasiliyNovikov/ProcFsCore/master/LICENSE</PackageLicenseUrl>
-        <Copyright>Vasiliy Novikov</Copyright>
-        <RepositoryUrl>https://github.com/VasiliyNovikov/ProcFsCore</RepositoryUrl>
-        <RepositoryType>GitHub</RepositoryType>
-    </PropertyGroup>
-    <ItemGroup>
-      <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.7.0" />
-    </ItemGroup>
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp2.1;netcoreapp2.2;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Version>0.1.7</Version>
+    <Authors>Vasiliy Novikov</Authors>
+    <Description>Lightweight .NET Core procfs wrapper</Description>
+    <PackageTags>linux;procfs</PackageTags>
+    <PackageProjectUrl>https://github.com/VasiliyNovikov/ProcFsCore</PackageProjectUrl>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/VasiliyNovikov/ProcFsCore/master/LICENSE</PackageLicenseUrl>
+    <Copyright>Vasiliy Novikov</Copyright>
+    <RepositoryUrl>https://github.com/VasiliyNovikov/ProcFsCore</RepositoryUrl>
+    <RepositoryType>GitHub</RepositoryType>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.7.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="ProcFs.Cpu.cs" DependentUpon="ProcFs.cs"/>
+    <Compile Update="ProcFs.Disk.cs" DependentUpon="ProcFs.cs"/>
+    <Compile Update="ProcFs.Memory.cs" DependentUpon="ProcFs.cs"/>
+    <Compile Update="ProcFs.Net.cs" DependentUpon="ProcFs.cs"/>
+  </ItemGroup>
 </Project>

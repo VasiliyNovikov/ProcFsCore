@@ -2,7 +2,7 @@ using System;
 
 namespace ProcFsCore
 {
-    public struct ProcessIO
+    public readonly struct ProcessIO
     {
         public readonly Direction Read;
         public readonly Direction Write;
@@ -41,7 +41,7 @@ namespace ProcFsCore
             }
         }
         
-        public struct  Direction
+        public readonly struct Direction
         {
             public long Characters { get; }
             public long Bytes { get; }

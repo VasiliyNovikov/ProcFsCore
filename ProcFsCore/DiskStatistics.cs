@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ProcFsCore
 {
-    public struct DiskStatistics
+    public readonly struct DiskStatistics
     {
         private const string DiskStatsPath = ProcFs.RootPath + "/diskstats";
         private const long SectorSize = 512; 
@@ -25,14 +25,13 @@ namespace ProcFsCore
             TotalWeightedTime = totalWeightedTime;
         }
 
-        private static readonly ReadOnlyMemory<byte> WhiteSpaces = "  \t\v\f\x0085".ToUtf8();
         private static readonly ReadOnlyMemory<byte> LoopDeviceStart = "loop".ToUtf8();
         private static readonly ReadOnlyMemory<byte> Sr0DeviceName = "sr0".ToUtf8();
         internal static IEnumerable<DiskStatistics> GetAll()
         {
             // http://man7.org/linux/man-pages/man5/proc.5.html
             // https://www.kernel.org/doc/Documentation/iostats.txt
-            var statsReader = new Utf8FileReader<X1024>(DiskStatsPath, whiteSpaces: WhiteSpaces);
+            var statsReader = new Utf8FileReader<X1024>(DiskStatsPath);
             try
             {
                 while (!statsReader.EndOfStream)
@@ -75,7 +74,7 @@ namespace ProcFsCore
             }
         }
 
-        public struct Operation
+        public readonly struct Operation
         {
             public long Count { get; }
             public long Merged { get; }

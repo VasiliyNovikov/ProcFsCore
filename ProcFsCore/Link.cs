@@ -3,22 +3,22 @@ using System.Buffers.Text;
 
 namespace ProcFsCore
 {
-    public struct Link
+    public readonly struct Link
     {
         public LinkType Type { get; }
-        public string Path { get; }
+        public string? Path { get; }
         public int INode { get; }
 
-        private Link(LinkType type, string path, int iNode)
+        private Link(LinkType type, string? path, int iNode)
         {
             Type = type;
             Path = path;
             INode = iNode;
         }
 
-        private static ReadOnlyMemory<byte> socketLinkStart = "socket:[".ToUtf8();
-        private static ReadOnlyMemory<byte> pipeLinkStart = "pipe:[".ToUtf8();
-        private static ReadOnlyMemory<byte> anonLinkStart = "anon_inode:[".ToUtf8();
+        private static readonly ReadOnlyMemory<byte> socketLinkStart = "socket:[".ToUtf8();
+        private static readonly ReadOnlyMemory<byte> pipeLinkStart = "pipe:[".ToUtf8();
+        private static readonly ReadOnlyMemory<byte> anonLinkStart = "anon_inode:[".ToUtf8();
         
         public static Link Read(string linkPath)
         {

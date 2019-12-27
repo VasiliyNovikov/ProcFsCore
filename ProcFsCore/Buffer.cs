@@ -11,9 +11,9 @@ namespace ProcFsCore
     {
         public static readonly int MinimumCapacity = Unsafe.SizeOf<TFixed>() / Unsafe.SizeOf<T>();
 
-        private T[] _rentedBuffer;
+        private T[]? _rentedBuffer;
         // ReSharper disable FieldCanBeMadeReadOnly.Local
-        private TFixed _fixedBuffer; // It must be non-readonly otherwise it will always load the copy of it to stack instead of reference
+        private readonly TFixed _fixedBuffer; // It must be non-readonly otherwise it will always load the copy of it to stack instead of reference
         // ReSharper restore FieldCanBeMadeReadOnly.Local
 
         public int Length { get; private set; }
@@ -45,7 +45,7 @@ namespace ProcFsCore
             if (newLength < 0) throw new ArgumentOutOfRangeException(nameof(newLength));
             if (newLength > Length)
             {
-                var currentBufferCapacity = Length > MinimumCapacity ? _rentedBuffer.Length : MinimumCapacity;
+                var currentBufferCapacity = _rentedBuffer?.Length ?? MinimumCapacity;
                 if (newLength > currentBufferCapacity)
                 {
                     var newBuffer = ArrayPool<T>.Shared.Rent(newLength);
@@ -71,23 +71,21 @@ namespace ProcFsCore
 
         public static Buffer<byte, TFixed> FromFile(string fileName)
         {
-            using (var stream = LightFileStream.OpenRead(fileName))
+            using var stream = LightFileStream.OpenRead(fileName);
+            var buffer = new Buffer<byte, TFixed>(Buffer<byte, TFixed>.MinimumCapacity);
+            var totalReadBytes = 0;
+            while (true)
             {
-                var buffer = new Buffer<byte, TFixed>(Buffer<byte, TFixed>.MinimumCapacity);
-                var totalReadBytes = 0;
-                while (true)
-                {
-                    var readBytes = stream.Read(buffer.Span.Slice(totalReadBytes));
-                    if (readBytes == 0)
-                        break;
+                var readBytes = stream.Read(buffer.Span.Slice(totalReadBytes));
+                if (readBytes == 0)
+                    break;
 
-                    totalReadBytes += readBytes;
-                    if (totalReadBytes == buffer.Length)
-                        buffer.Resize(buffer.Length * 2);
-                }
-                buffer.Resize(totalReadBytes);
-                return buffer;
+                totalReadBytes += readBytes;
+                if (totalReadBytes == buffer.Length)
+                    buffer.Resize(buffer.Length * 2);
             }
+            buffer.Resize(totalReadBytes);
+            return buffer;
         }
     }
 }
