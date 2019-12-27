@@ -45,7 +45,9 @@ namespace ProcFsCore
             if (newLength < 0) throw new ArgumentOutOfRangeException(nameof(newLength));
             if (newLength > Length)
             {
-                var currentBufferCapacity = _rentedBuffer?.Length ?? MinimumCapacity;
+#nullable disable
+                var currentBufferCapacity = Length > MinimumCapacity ? _rentedBuffer.Length : MinimumCapacity;
+#nullable restore
                 if (newLength > currentBufferCapacity)
                 {
                     var newBuffer = ArrayPool<T>.Shared.Rent(newLength);
