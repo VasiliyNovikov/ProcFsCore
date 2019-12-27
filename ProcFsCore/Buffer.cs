@@ -13,7 +13,7 @@ namespace ProcFsCore
 
         private T[]? _rentedBuffer;
         // ReSharper disable FieldCanBeMadeReadOnly.Local
-        private readonly TFixed _fixedBuffer; // It must be non-readonly otherwise it will always load the copy of it to stack instead of reference
+        private TFixed _fixedBuffer; // It must be non-readonly otherwise it will always load the copy of it to stack instead of reference
         // ReSharper restore FieldCanBeMadeReadOnly.Local
 
         public int Length { get; private set; }
