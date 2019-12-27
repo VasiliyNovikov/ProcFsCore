@@ -3,16 +3,16 @@ using System.Text;
 
 namespace ProcFsCore
 {
-    public struct NetService
+    public readonly struct NetService
     {
         public NetServiceType Type { get; }
         public NetEndPoint LocalEndPoint { get; }
         public NetEndPoint RemoteEndPoint { get; }
-        public string Path { get; }
+        public string? Path { get; }
         public NetServiceState State { get; }
         public int INode { get; }
 
-        public NetService(NetServiceType type, in NetEndPoint localEndPoint, in NetEndPoint remoteEndPoint, string path, NetServiceState state, int iNode)
+        public NetService(NetServiceType type, in NetEndPoint localEndPoint, in NetEndPoint remoteEndPoint, string? path, NetServiceState state, int iNode)
         {
             Type = type;
             LocalEndPoint = localEndPoint;
@@ -50,6 +50,7 @@ namespace ProcFsCore
             return builder.ToString();
         }
 
+#nullable disable
         private static readonly string[,] NetServiceFiles = 
         {
             { ProcFs.RootPath + "/net/tcp", ProcFs.RootPath + "/net/tcp6" },
@@ -57,7 +58,8 @@ namespace ProcFsCore
             { ProcFs.RootPath + "/net/raw", ProcFs.RootPath + "/net/raw6" },
             { ProcFs.RootPath + "/net/unix", null }
         };
-        
+#nullable restore
+
         private static IEnumerable<NetService> Get(NetServiceType type, NetAddressVersion? addressVersion)
         {
             var serviceFile = NetServiceFiles[(int) type, (addressVersion ?? NetAddressVersion.IPv4) == NetAddressVersion.IPv4 ? 0 : 1];

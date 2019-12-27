@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ProcFsCore
 {
-    public struct DiskStatistics
+    public readonly struct DiskStatistics
     {
         private const string DiskStatsPath = ProcFs.RootPath + "/diskstats";
         private const long SectorSize = 512; 
@@ -26,45 +26,55 @@ namespace ProcFsCore
         }
 
         private static readonly ReadOnlyMemory<byte> LoopDeviceStart = "loop".ToUtf8();
+        private static readonly ReadOnlyMemory<byte> Sr0DeviceName = "sr0".ToUtf8();
         internal static IEnumerable<DiskStatistics> GetAll()
         {
             // http://man7.org/linux/man-pages/man5/proc.5.html
             // https://www.kernel.org/doc/Documentation/iostats.txt
-            var statReader = new Utf8FileReader<X1024>(DiskStatsPath);
+            var statsReader = new Utf8FileReader<X1024>(DiskStatsPath);
             try
             {
-                while (!statReader.EndOfStream)
+                while (!statsReader.EndOfStream)
                 {
-                    statReader.SkipWhiteSpaces();
-                    statReader.SkipWord();
-                    statReader.SkipWord();
-
-                    var deviceName = statReader.ReadWord();
-                    if (deviceName.StartsWith(LoopDeviceStart.Span))
+                    var statLine = statsReader.ReadLine();
+                    var statReader = new Utf8SpanReader(statLine);
+                    try
                     {
-                        statReader.SkipLine();
-                        continue;                        
+                        statReader.SkipWhiteSpaces();
+                        statReader.SkipWord();
+                        statReader.SkipWord();
+
+                        var deviceName = statReader.ReadWord();
+                        if (deviceName.StartsWith(LoopDeviceStart.Span))
+                            continue;                        
+
+                        if (deviceName.SequenceEqual(Sr0DeviceName.Span))
+                            continue;                        
+
+                        var deviceNameStr = deviceName.ToUtf8String();
+
+                        var reads = Operation.Parse(ref statReader);
+                        var writes = Operation.Parse(ref statReader);
+
+                        statReader.SkipWord();
+                        var totalTime = statReader.ReadInt64() / 1_000_000.0;
+                        var totalWeightedTime = statReader.ReadInt64() / 1_000_000.0;
+
+                        yield return new DiskStatistics(deviceNameStr, reads, writes, totalTime, totalWeightedTime);
                     }
-
-                    var deviceNameStr = deviceName.ToUtf8String();
-
-                    var reads = Operation.Parse(ref statReader);
-                    var writes = Operation.Parse(ref statReader);
-
-                    statReader.SkipWord();
-                    var totalTime = statReader.ReadInt64() / 1_000_000.0;
-                    var totalWeightedTime = statReader.ReadInt64() / 1_000_000.0;
-
-                    yield return new DiskStatistics(deviceNameStr, reads, writes, totalTime, totalWeightedTime);
+                    finally
+                    {
+                        statReader.Dispose();
+                    }
                 }
             }
             finally
             {
-                statReader.Dispose();
+                statsReader.Dispose();
             }
         }
 
-        public struct Operation
+        public readonly struct Operation
         {
             public long Count { get; }
             public long Merged { get; }

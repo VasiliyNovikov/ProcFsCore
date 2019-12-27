@@ -15,7 +15,7 @@ namespace ProcFsCore
 
         private static readonly Func<char, bool> WhiteSpacePredicate = Char.IsWhiteSpace;
 
-        public static ReadOnlySpan<byte> Trim(this ReadOnlySpan<byte> source, Func<char, bool> predicate = null)
+        public static ReadOnlySpan<byte> Trim(this ReadOnlySpan<byte> source, Func<char, bool>? predicate = null)
         {
             if (predicate == null)
                 predicate = WhiteSpacePredicate;
@@ -37,7 +37,7 @@ namespace ProcFsCore
             return source.Slice(startPos, endPos - startPos + 1);
         }
 
-        public static ReadOnlySpan<byte> Trim(this Span<byte> source, Func<char, bool> predicate = null) => ((ReadOnlySpan<byte>) source).Trim(predicate);
+        public static ReadOnlySpan<byte> Trim(this Span<byte> source, Func<char, bool>? predicate = null) => ((ReadOnlySpan<byte>) source).Trim(predicate);
 
         public static void Replace(this Span<byte> source, char oldValue, char newValue)
         {
