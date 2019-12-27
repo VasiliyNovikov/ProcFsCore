@@ -18,13 +18,18 @@ namespace ProcFsCore.Tests
         {
             Assert.AreEqual(process.Id, p.Pid);
 
+            RetryOnAssert(() =>
+            {
+                process.Refresh();
+                p.Refresh();
 #if NET3PLUS
-            if (process.ProcessName != p.Name)
-                // .NET Core 3.x breaking change
-                Assert.IsTrue(p.CommandLine.Contains(process.ProcessName), $"Process name mismatch: {p.Name} ({p.CommandLine}) - {process.ProcessName}");
+                if (process.ProcessName != p.Name)
+                    // .NET Core 3.x breaking change
+                    Assert.IsTrue(p.CommandLine.Contains(process.ProcessName), $"Process name mismatch: {p.Name} ({p.CommandLine}) - {process.ProcessName}");
 #else
-            Assert.AreEqual(process.ProcessName, p.Name);
+                Assert.AreEqual(process.ProcessName, p.Name);
 #endif
+            });
 
             Assert.IsNotNull(p.CommandLine);
             Assert.AreEqual(process.StartTime.ToUniversalTime(), p.StartTimeUtc);
