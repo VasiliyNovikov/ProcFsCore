@@ -26,6 +26,7 @@ namespace ProcFsCore.Tests
                 {
                     hasTotalTime = true;
                     //Assert.IsTrue(stat.TotalWeightedTime >= stat.TotalTime, $"{stat.DeviceName} TotalWeightedTime >= TotalTime");
+                    Assert.IsTrue(stat.TotalWeightedTime > 0, $"{stat.DeviceName} TotalWeightedTime > 0");
                     Assert.AreEqual(stat.Reads.Time + stat.Writes.Time, stat.TotalWeightedTime, 0.5, $"{stat.DeviceName} Reads.Time + Writes.Time ≈ TotalWeightedTime");
                 }
             }
