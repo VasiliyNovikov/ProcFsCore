@@ -17,11 +17,15 @@ namespace ProcFsCore.Tests
         private static void VerifyProcess(Process p, DiagnosticsProcess process)
         {
             Assert.AreEqual(process.Id, p.Pid);
-            
+
+#if NET3PLUS
             if (process.ProcessName != p.Name)
-                // .NET Core 3.0 breaking change
+                // .NET Core 3.x breaking change
                 Assert.IsTrue(p.CommandLine.Contains(process.ProcessName), $"Process name mismatch: {p.Name} ({p.CommandLine}) - {process.ProcessName}");
-            
+#else
+            Assert.AreEqual(process.ProcessName, p.Name);
+#endif
+
             Assert.IsNotNull(p.CommandLine);
             Assert.AreEqual(process.StartTime.ToUniversalTime(), p.StartTimeUtc);
 

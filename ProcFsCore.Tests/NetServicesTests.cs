@@ -88,6 +88,7 @@ namespace ProcFsCore.Tests
                 var expectedServices = IPGlobalProperties.GetIPGlobalProperties()
                                                          .GetActiveTcpConnections()
 #if !NET3PLUS
+                                                        // .NET Core 3.x breaking change
                                                          .Where(s => s.State != TcpState.Listen)
 #endif
                                                          .ToArray();
@@ -113,6 +114,7 @@ namespace ProcFsCore.Tests
                                                   .Where(s => s.State == NetServiceState.Listen)
                                                   .ToArray();
 #if NET3PLUS
+                // .NET Core 3.x breaking change
                 var expectedServices = IPGlobalProperties.GetIPGlobalProperties()
                                                          .GetActiveTcpListeners();
 #else
