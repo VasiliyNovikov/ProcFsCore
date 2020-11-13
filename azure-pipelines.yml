@@ -78,7 +78,6 @@ stages:
   condition: "and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))"
   jobs:
   - deployment:
-  - job: Publish
     pool:
       vmImage: windows-latest
     environment: production
