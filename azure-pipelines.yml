@@ -17,6 +17,11 @@ stages:
     pool:
       vmImage: $(imageName)
     steps:
+    - bash: |
+        echo "/proc/diskstats:"
+        cat /proc/diskstats
+      displayName: Show stuff from procfs
+
     - task: UseDotNet@2
       displayName: 'Install .NET Core SDK 2.1.x'
       inputs:
