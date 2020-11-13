@@ -19,7 +19,7 @@ namespace ProcFsCore
 
         internal static unsafe MemoryStatistics Get()
         {
-            var statReader = new Utf8FileReader<X2048>(StatPath);
+            var statReader = new Utf8FileReader(StatPath, 2048);
             try
             {
                 var sections = stackalloc long[(int) Section.Max];

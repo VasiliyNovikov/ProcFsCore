@@ -19,7 +19,7 @@ namespace ProcFsCore
         private static readonly ReadOnlyMemory<byte> CpuNumberStart = "cpu".ToUtf8();
         internal static IEnumerable<CpuStatistics> GetAll()
         {
-            var statReader = new Utf8FileReader<X4096>(StatPath);
+            var statReader = new Utf8FileReader(StatPath, 4096);
             try
             {
                 while (!statReader.EndOfStream)

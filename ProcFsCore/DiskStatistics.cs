@@ -31,7 +31,7 @@ namespace ProcFsCore
         {
             // http://man7.org/linux/man-pages/man5/proc.5.html
             // https://www.kernel.org/doc/Documentation/iostats.txt
-            var statsReader = new Utf8FileReader<X1024>(DiskStatsPath);
+            var statsReader = new Utf8FileReader(DiskStatsPath, 1024);
             try
             {
                 while (!statsReader.EndOfStream)

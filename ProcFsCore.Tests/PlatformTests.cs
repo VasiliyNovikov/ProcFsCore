@@ -37,22 +37,18 @@ namespace ProcFsCore.Tests
         public void StructUsingSemantics_InPlace_NoClosure_Test()
         {
             var verifier = new Verifier();
-            using (var test = new Test(verifier.Verify))
-            {
-                test.Update();
-                verifier.ExpectedValue = test.Value;
-            }
+            using var test = new Test(verifier.Verify);
+            test.Update();
+            verifier.ExpectedValue = test.Value;
         }
 
         [TestMethod]
         public void StructUsingSemantics_InPlace_Closure_Test()
         {
             var verifier = new Verifier();
-            using (var test = new Test(val => verifier.Verify(val)))
-            {
-                test.Update();
-                verifier.ExpectedValue = test.Value;
-            }
+            using var test = new Test(val => verifier.Verify(val));
+            test.Update();
+            verifier.ExpectedValue = test.Value;
         }
         
         [TestMethod]

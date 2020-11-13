@@ -172,11 +172,9 @@ namespace ProcFsCore
                 {
                     try
                     {
-                        using (var cmdLineBuffer = Buffer<byte, X256>.FromFile($"{ProcFs.RootPath}/{Pid}/cmdline"))
-                        {
-                            var cmdLineSpan = cmdLineBuffer.Span.Trim(ZeroPredicate);
-                            _commandLine = cmdLineSpan.IsEmpty ? "" : cmdLineSpan.ToUtf8String();
-                        }
+                        using var cmdLineBuffer = Buffer<byte>.FromFile($"{ProcFs.RootPath}/{Pid}/cmdline", 256);
+                        var cmdLineSpan = cmdLineBuffer.Span.Trim(ZeroPredicate);
+                        _commandLine = cmdLineSpan.IsEmpty ? "" : cmdLineSpan.ToUtf8String();
                     }
                     catch (IOException)
                     {
@@ -193,8 +191,7 @@ namespace ProcFsCore
         {
             get
             {
-                if (_startTimeUtc == null)
-                    _startTimeUtc = ProcFs.BootTimeUtc + TimeSpan.FromSeconds(StartTimeTicks / (double)ProcFs.TicksPerSecond);
+                _startTimeUtc ??= ProcFs.BootTimeUtc + TimeSpan.FromSeconds(StartTimeTicks / (double) ProcFs.TicksPerSecond);
                 return _startTimeUtc.Value;
             }
         }
@@ -229,7 +226,7 @@ namespace ProcFsCore
             _initialized = false;
             _commandLine = null;
             _startTimeUtc = null;
-            var statReader = new Utf8FileReader<X512>($"{ProcFs.RootPath}/{Pid}/stat");
+            var statReader = new Utf8FileReader($"{ProcFs.RootPath}/{Pid}/stat", 512);
             try
             {
                 // See http://man7.org/linux/man-pages/man5/proc.5.html /proc/[pid]/stat section

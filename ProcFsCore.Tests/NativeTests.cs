@@ -20,8 +20,8 @@ namespace ProcFsCore.Tests
                 var links = Directory.EnumerateFiles($"/proc/{Native.GetPid()}/fd")
                                      .Select(l =>
                                      {
-                                         using (var linkBuffer = Native.ReadLink(l))
-                                             return linkBuffer.Span.ToUtf8String();
+                                         using var linkBuffer = Native.ReadLink(l);
+                                         return linkBuffer.Span.ToUtf8String();
                                      })
                                      .ToHashSet();
                 Assert.IsTrue(links.Contains(fileName));

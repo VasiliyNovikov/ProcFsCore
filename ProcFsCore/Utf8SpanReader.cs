@@ -9,7 +9,7 @@ namespace ProcFsCore
         private readonly int _length;
         private readonly ReadOnlyMemory<byte> _whiteSpaces;
         private readonly ReadOnlyMemory<byte> _lineSeparators;
-        
+
         private int _position;
 
         private unsafe ReadOnlySpan<byte> Span
@@ -27,11 +27,11 @@ namespace ProcFsCore
             fixed(byte* ptr = &span.GetPinnableReference())
                 _pointer = ptr;
             _length = span.Length;
-            _whiteSpaces = (whiteSpaces ?? Utf8FileReader<X256>.DefaultWhiteSpaces);
-            _lineSeparators = (lineSeparators ?? Utf8FileReader<X256>.DefaultLineSeparators);
+            _whiteSpaces = (whiteSpaces ?? Utf8FileReader.DefaultWhiteSpaces);
+            _lineSeparators = (lineSeparators ?? Utf8FileReader.DefaultLineSeparators);
             _position = 0;
         }
-        
+
         public void Dispose()
         {
         }
@@ -61,7 +61,7 @@ namespace ProcFsCore
             _position += separatorPos + 1;
             SkipSeparators(separators);
         }
-        
+
         public ReadOnlySpan<byte> ReadFragment(ReadOnlySpan<byte> separators)
         {
             if (EndOfStream)
@@ -81,7 +81,7 @@ namespace ProcFsCore
             SkipSeparators(separators);
             return result;
         }
-        
+
         public ReadOnlySpan<byte> ReadToEnd()
         {
             var result = Span.Slice(_position);

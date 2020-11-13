@@ -14,18 +14,18 @@ namespace ProcFsCore.Benchmarks
         public void FileStream_Read_Proc_Stat()
         {
             Span<byte> buffer = stackalloc byte[BufferSize];
-            using (var file = File.OpenRead(Path))
-                for (var i = 0; i < NumberOfReads; ++i)
-                    file.Read(buffer);
+            using var file = File.OpenRead(Path);
+            for (var i = 0; i < NumberOfReads; ++i)
+                file.Read(buffer);
         }
         
         [Benchmark]
         public void LightFileStream_Read_Proc_Stat()
         {
             Span<byte> buffer = stackalloc byte[BufferSize];
-            using (var file = LightFileStream.OpenRead(Path))
-                for (var i = 0; i < NumberOfReads; ++i)
-                    file.Read(buffer);
+            using var file = LightFileStream.OpenRead(Path);
+            for (var i = 0; i < NumberOfReads; ++i)
+                file.Read(buffer);
         }
     }
 }

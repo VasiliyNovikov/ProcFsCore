@@ -17,8 +17,7 @@ namespace ProcFsCore
 
         public static ReadOnlySpan<byte> Trim(this ReadOnlySpan<byte> source, Func<char, bool>? predicate = null)
         {
-            if (predicate == null)
-                predicate = WhiteSpacePredicate;
+            predicate ??= WhiteSpacePredicate;
             
             var startPos = 0;
             while (startPos < source.Length && predicate((char)source[startPos]))
