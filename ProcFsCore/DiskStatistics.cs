@@ -26,8 +26,6 @@ namespace ProcFsCore
         }
 
         private static readonly ReadOnlyMemory<byte> LoopDeviceStart = "loop".ToUtf8();
-        private static readonly ReadOnlyMemory<byte> Sr0DeviceName = "sr0".ToUtf8();
-        private static readonly ReadOnlyMemory<byte> Md0DeviceName = "md0".ToUtf8();
 
         internal static IEnumerable<DiskStatistics> GetAll()
         {
@@ -47,25 +45,20 @@ namespace ProcFsCore
                         statReader.SkipWord();
 
                         var deviceName = statReader.ReadWord();
-                        if (deviceName.StartsWith(LoopDeviceStart.Span))
-                            continue;                        
-
-                        if (deviceName.SequenceEqual(Sr0DeviceName.Span))
-                            continue;                        
-
-                        if (deviceName.SequenceEqual(Md0DeviceName.Span))
-                            continue;                        
-
-                        var deviceNameStr = deviceName.ToUtf8String();
 
                         var reads = Operation.Parse(ref statReader);
                         var writes = Operation.Parse(ref statReader);
+
+                        if (deviceName.StartsWith(LoopDeviceStart.Span) &&
+                            reads.Count == 0 && reads.Merged == 0 && reads.Bytes == 0 && reads.Time == 0 &&
+                            writes.Count == 0 && writes.Merged == 0 && writes.Bytes == 0 && writes.Time == 0)
+                            continue;
 
                         statReader.SkipWord();
                         var totalTime = statReader.ReadInt64() / 1_000_000.0;
                         var totalWeightedTime = statReader.ReadInt64() / 1_000_000.0;
 
-                        yield return new DiskStatistics(deviceNameStr, reads, writes, totalTime, totalWeightedTime);
+                        yield return new DiskStatistics(deviceName.ToUtf8String(), reads, writes, totalTime, totalWeightedTime);
                     }
                     finally
                     {
