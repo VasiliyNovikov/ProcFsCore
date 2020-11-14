@@ -14,7 +14,7 @@ namespace ProcFsCore
         ReadOnlySpan<byte> ReadFragment(ReadOnlySpan<byte> separators);
         ReadOnlySpan<byte> ReadToEnd();
     }
-    
+
     public static class Utf8ReaderExtensions
     {
         public static unsafe void SkipFragment<TReader>(this ref TReader reader, char separator)
@@ -24,7 +24,7 @@ namespace ProcFsCore
             var separators = new ReadOnlySpan<byte>(separatorsBuff, 1);
             reader.SkipFragment(separators);
         }
-        
+
         public static unsafe ReadOnlySpan<byte> ReadFragment<TReader>(this ref TReader reader, char separator)
             where TReader: struct, IUtf8Reader
         {
@@ -44,7 +44,7 @@ namespace ProcFsCore
         {
             reader.SkipFragment(reader.LineSeparators);
         }
-        
+
         public static ReadOnlySpan<byte> ReadWord<TReader>(this ref TReader reader)
             where TReader: struct, IUtf8Reader
         {
@@ -62,7 +62,7 @@ namespace ProcFsCore
         {
             reader.SkipSeparators(reader.WhiteSpaces);
         }
-        
+
         public static string ReadStringWord<TReader>(this ref TReader reader)
             where TReader: struct, IUtf8Reader
         {
@@ -77,7 +77,7 @@ namespace ProcFsCore
                 return result;
             throw new FormatException($"{word.ToUtf8String()} is not valid Int16 value");
         }
-        
+
         public static int ReadInt32<TReader>(this ref TReader reader, char format = default)
             where TReader: struct, IUtf8Reader
         {
@@ -86,7 +86,7 @@ namespace ProcFsCore
                 return result;
             throw new FormatException($"{word.ToUtf8String()} is not valid Int32 value");
         }
-        
+
         public static long ReadInt64<TReader>(this ref TReader reader, char format = default)
             where TReader: struct, IUtf8Reader
         {

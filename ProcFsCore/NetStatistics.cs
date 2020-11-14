@@ -11,7 +11,7 @@ namespace ProcFsCore
 
         static NetStatistics()
         {
-            var statReader = new Utf8FileReader<X512>(NetDevPath);
+            var statReader = new Utf8FileReader(NetDevPath, 512);
             try
             {
                 statReader.SkipLine();
@@ -52,7 +52,7 @@ namespace ProcFsCore
 
         internal static IEnumerable<NetStatistics> GetAll()
         {
-            var statReader = new Utf8FileReader<X2048>(NetDevPath);
+            var statReader = new Utf8FileReader(NetDevPath, 2048);
             try
             {
                 statReader.SkipLine();

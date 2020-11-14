@@ -2,17 +2,18 @@ using System;
 
 namespace ProcFsCore
 {
-    public struct Utf8FileReader<TFixed> : IUtf8Reader
-        where TFixed : unmanaged, IFixedBuffer
+    public struct Utf8FileReader : IUtf8Reader
     {
+        // ReSharper disable StaticMemberInGenericType
         internal static readonly ReadOnlyMemory<byte> DefaultWhiteSpaces = " \n \t\v\f\r\x0085".ToUtf8();
         internal static readonly ReadOnlyMemory<byte> DefaultLineSeparators = "\n\r".ToUtf8();
+        // ReSharper restore StaticMemberInGenericType
 
         private readonly LightFileStream _stream;
         private readonly ReadOnlyMemory<byte> _whiteSpaces;
         private readonly ReadOnlyMemory<byte> _lineSeparators;
 
-        private Buffer<byte, TFixed> _buffer;
+        private Buffer<byte> _buffer;
         private int _lockedStart;
         private int _bufferedStart;
         private int _bufferedEnd;
@@ -23,13 +24,13 @@ namespace ProcFsCore
 
         public bool EndOfStream => _endOfStream && _bufferedStart == _bufferedEnd;
 
-        public Utf8FileReader(string fileName, int? initialBufferSize = null, ReadOnlyMemory<byte>? whiteSpaces = null, ReadOnlyMemory<byte>? lineSeparators = null)
+        public Utf8FileReader(string fileName, int initialBufferSize = 0, ReadOnlyMemory<byte>? whiteSpaces = null, ReadOnlyMemory<byte>? lineSeparators = null)
         {
             _stream = LightFileStream.OpenRead(fileName);
             _whiteSpaces = whiteSpaces ?? DefaultWhiteSpaces;
             _lineSeparators = lineSeparators ?? DefaultLineSeparators;
 
-            _buffer = new Buffer<byte, TFixed>(initialBufferSize ?? Buffer<byte, TFixed>.MinimumCapacity);
+            _buffer = new Buffer<byte>(initialBufferSize);
             _lockedStart = -1;
             _bufferedStart = 0;
             _bufferedEnd = 0;

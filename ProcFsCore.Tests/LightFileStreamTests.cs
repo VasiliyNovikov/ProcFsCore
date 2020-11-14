@@ -33,15 +33,13 @@ namespace ProcFsCore.Tests
             var expectedData = new byte[65536];
             _rnd.NextBytes(expectedData);
             File.WriteAllBytes(tempFile, expectedData);
-            using (var file = LightFileStream.OpenRead(tempFile))
-            {
-                var actualData = new byte[expectedData.Length * 2];
-                var totalReadBytes = 0;
-                int readBytes;
-                while ((readBytes = file.Read(actualData.AsSpan(totalReadBytes, 1024))) != 0)
-                    totalReadBytes += readBytes;
-                Assert.IsTrue(actualData.AsSpan(0, totalReadBytes).SequenceEqual(expectedData));                
-            }
+            using var file = LightFileStream.OpenRead(tempFile);
+            var actualData = new byte[expectedData.Length * 2];
+            var totalReadBytes = 0;
+            int readBytes;
+            while ((readBytes = file.Read(actualData.AsSpan(totalReadBytes, 1024))) != 0)
+                totalReadBytes += readBytes;
+            Assert.IsTrue(actualData.AsSpan(0, totalReadBytes).SequenceEqual(expectedData));
         }
         
         [TestMethod]

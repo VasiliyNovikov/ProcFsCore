@@ -20,7 +20,7 @@ namespace ProcFsCore.Tests
             var entries = NetArpEntry.Get(GetTestProcFsFile("/proc/net/arp")).ToList();
             Assert.AreEqual(5, entries.Count);
 
-            void VerifyEntry(in NetArpEntry entry, string address, string hardwareAddress, string device)
+            static void VerifyEntry(in NetArpEntry entry, string address, string hardwareAddress, string device)
             {
                 Assert.AreEqual(IPAddress.Parse(address), entry.Address);
                 Assert.AreEqual(hardwareAddress, entry.HardwareAddress.ToString());

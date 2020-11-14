@@ -24,7 +24,7 @@ namespace ProcFsCore
                 {
                     if (_bootTimeUtc == null || BootTimeCacheTimer.Elapsed > BootTimeCacheInterval)
                     {
-                        var statReader = new Utf8FileReader<X4096>(StatPath);
+                        var statReader = new Utf8FileReader(StatPath, 4096);
                         try
                         {
                             statReader.SkipFragment(BtimeStr.Span, true);

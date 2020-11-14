@@ -12,14 +12,20 @@ namespace ProcFsCore.Tests
             foreach (var stat in ProcFs.Disk.Statistics())
             {
                 Assert.IsNotNull(stat.DeviceName);
-                
+                if (stat.DeviceName == "md0" ||
+                    stat.DeviceName == "sr0" ||
+                    stat.DeviceName == "sda14" ||
+                    stat.DeviceName == "sda15" ||
+                    stat.DeviceName.StartsWith("loop"))
+                    continue;
+
                 void Verify(in DiskStatistics.Operation op)
                 {
                     Assert.IsTrue(op.Count > 0, $"{stat.DeviceName} Count > 0");
                     Assert.IsTrue(op.Bytes > 0, $"{stat.DeviceName} Bytes > 0");
                     Assert.IsTrue(op.Time > 0, $"{stat.DeviceName} Time > 0");
                 }
-                
+
                 Verify(stat.Reads);
 
                 if (stat.TotalTime > 0)

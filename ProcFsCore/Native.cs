@@ -21,9 +21,9 @@ namespace ProcFsCore
         [DllImport("libc", EntryPoint = "readlink", SetLastError = true)]
         private static extern unsafe IntPtr ReadLink(string path, void* buffer, IntPtr bufferSize);
 
-        public static unsafe Buffer<byte, X256> ReadLink(string path)
+        public static unsafe Buffer<byte> ReadLink(string path)
         {
-            var buffer = new Buffer<byte, X256>(Buffer<byte, X256>.MinimumCapacity);
+            var buffer = new Buffer<byte>(256);
             while (true)
             {
                 fixed (void* bufferPtr = &buffer.Span.GetPinnableReference())
@@ -39,7 +39,8 @@ namespace ProcFsCore
                     }
                 }
 
-                buffer.Resize(buffer.Length * 2);
+                buffer.Dispose();
+                buffer = new Buffer<byte>(buffer.Length * 2);
             }
         }
 

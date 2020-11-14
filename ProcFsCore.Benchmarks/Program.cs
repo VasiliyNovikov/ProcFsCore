@@ -8,7 +8,8 @@ namespace ProcFsCore.Benchmarks
         {
             //BenchmarkRunner.Run<ProcessAllBenchmarks>();
             //BenchmarkRunner.Run<NetStatisticsAllBenchmarks>();
-            BenchmarkRunner.Run<FileStreamBenchmarks>();
+            //BenchmarkRunner.Run<FileStreamBenchmarks>();
+            BenchmarkRunner.Run<BufferBenchmarks>();
         }
     }
 }

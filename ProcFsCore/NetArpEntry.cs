@@ -11,7 +11,7 @@ namespace ProcFsCore
         public string Mask { get; }
         public string Device { get; }
 
-        public NetArpEntry(in NetAddress address, in NetHardwareAddress hardwareAddress, string mask, string device)
+        private NetArpEntry(in NetAddress address, in NetHardwareAddress hardwareAddress, string mask, string device)
         {
             Address = address;
             HardwareAddress = hardwareAddress;
@@ -25,7 +25,7 @@ namespace ProcFsCore
         
         internal static IEnumerable<NetArpEntry> Get(string netArpPath)
         {
-            var statReader = new Utf8FileReader<X1024>(netArpPath);
+            var statReader = new Utf8FileReader(netArpPath, 1024);
             try
             {
                 statReader.SkipLine();

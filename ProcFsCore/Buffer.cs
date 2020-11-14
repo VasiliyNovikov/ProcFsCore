@@ -1,80 +1,60 @@
 using System;
 using System.Buffers;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace ProcFsCore
 {
-    public struct Buffer<T, TFixed> : IDisposable
+    public struct Buffer<T> : IDisposable
         where T : unmanaged
-        where TFixed : unmanaged, IFixedBuffer
     {
-        public static readonly int MinimumCapacity = Unsafe.SizeOf<TFixed>() / Unsafe.SizeOf<T>();
-
         private T[]? _rentedBuffer;
-        // ReSharper disable FieldCanBeMadeReadOnly.Local
-        private TFixed _fixedBuffer; // It must be non-readonly otherwise it will always load the copy of it to stack instead of reference
-        // ReSharper restore FieldCanBeMadeReadOnly.Local
 
         public int Length { get; private set; }
 
         public Span<T> Span
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                if (Length == 0)
-                    return default;
-
-                return _rentedBuffer == null
-                    ? MemoryMarshal.Cast<byte, T>(_fixedBuffer.Span).Slice(0, Length)
-                    : new Span<T>(_rentedBuffer, 0, Length);
-            }
+            get => Length == 0 ? default : new Span<T>(_rentedBuffer, 0, Length);
         }
 
-        public Buffer(int length)
+        public Buffer(int length, int capacity = 0)
         {
             if (length < 0) throw new ArgumentOutOfRangeException(nameof(length));
             Length = length;
-            _rentedBuffer = Length > MinimumCapacity ? ArrayPool<T>.Shared.Rent(Length) : null;
-            _fixedBuffer = default;
+            if (length > capacity)
+                capacity = length;
+            _rentedBuffer = capacity == 0 ? null : ArrayPool<T>.Shared.Rent(capacity);
         }
 
         public void Resize(int newLength)
         {
             if (newLength < 0) throw new ArgumentOutOfRangeException(nameof(newLength));
-            if (newLength > Length)
+            if (newLength > _rentedBuffer?.Length)
             {
-#nullable disable
-                var currentBufferCapacity = Length > MinimumCapacity ? _rentedBuffer.Length : MinimumCapacity;
-#nullable restore
-                if (newLength > currentBufferCapacity)
+                var newBuffer = ArrayPool<T>.Shared.Rent(newLength);
+                if (_rentedBuffer != null)
                 {
-                    var newBuffer = ArrayPool<T>.Shared.Rent(newLength);
                     Span.CopyTo(newBuffer);
-                    if (_rentedBuffer != null)
-                        ArrayPool<T>.Shared.Return(_rentedBuffer);
-                    _rentedBuffer = newBuffer;
+                    ArrayPool<T>.Shared.Return(_rentedBuffer);
                 }
+                _rentedBuffer = newBuffer;
             }
-
             Length = newLength;
         }
 
         public void Dispose()
         {
-            if (_rentedBuffer != null)
-            {
-                ArrayPool<T>.Shared.Return(_rentedBuffer);
-                _rentedBuffer = null;
-            }
-            Length = 0;
+            if (_rentedBuffer == null)
+                return;
+
+            ArrayPool<T>.Shared.Return(_rentedBuffer);
+            _rentedBuffer = null;
         }
 
-        public static Buffer<byte, TFixed> FromFile(string fileName)
+        public static Buffer<byte> FromFile(string fileName, int sizePrediction = 0)
         {
             using var stream = LightFileStream.OpenRead(fileName);
-            var buffer = new Buffer<byte, TFixed>(Buffer<byte, TFixed>.MinimumCapacity);
+            var buffer = new Buffer<byte>(sizePrediction);
             var totalReadBytes = 0;
             while (true)
             {

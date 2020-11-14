@@ -13,16 +13,14 @@ namespace ProcFsCore.Tests
         {
             RetryOnAssert(() =>
             {
-
                 var stats = ProcFs.Net.Statistics().ToDictionary(stat => stat.InterfaceName);
                 var expectedStats = NetworkInterface.GetAllNetworkInterfaces()
                     .ToDictionary(iface => iface.Name, iface => iface.GetIPStatistics());
-                foreach (var ifaceAndStat in expectedStats)
+                foreach (var (name, expectedStat) in expectedStats)
                 {
-                    var expectedStat = ifaceAndStat.Value;
-                    var actualStat = stats[ifaceAndStat.Key];
+                    var actualStat = stats[name];
 
-                    long AdjustStat(long value) => Math.Min(UInt32.MaxValue, value);
+                    static long AdjustStat(long value) => Math.Min(UInt32.MaxValue, value);
 
                     Assert.AreEqual(expectedStat.BytesReceived, AdjustStat(actualStat.Receive.Bytes), 100000);
                     Assert.AreEqual(expectedStat.UnicastPacketsReceived, AdjustStat(actualStat.Receive.Packets), 100);

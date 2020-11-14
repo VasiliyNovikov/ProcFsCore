@@ -75,6 +75,7 @@ namespace ProcFsCore.Tests
         public void Process_ByPid_Test()
         {
             var process = DiagnosticsProcess.Start("sleep", "1000");
+            Assert.IsNotNull(process);
             try
             {
                 var pi = new Process(process.Id);

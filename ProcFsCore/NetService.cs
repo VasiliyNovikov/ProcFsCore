@@ -10,9 +10,10 @@ namespace ProcFsCore
         public NetEndPoint RemoteEndPoint { get; }
         public string? Path { get; }
         public NetServiceState State { get; }
+        // ReSharper disable once InconsistentNaming
         public int INode { get; }
 
-        public NetService(NetServiceType type, in NetEndPoint localEndPoint, in NetEndPoint remoteEndPoint, string? path, NetServiceState state, int iNode)
+        private NetService(NetServiceType type, in NetEndPoint localEndPoint, in NetEndPoint remoteEndPoint, string? path, NetServiceState state, int iNode)
         {
             Type = type;
             LocalEndPoint = localEndPoint;
@@ -63,7 +64,7 @@ namespace ProcFsCore
         private static IEnumerable<NetService> Get(NetServiceType type, NetAddressVersion? addressVersion)
         {
             var serviceFile = NetServiceFiles[(int) type, (addressVersion ?? NetAddressVersion.IPv4) == NetAddressVersion.IPv4 ? 0 : 1];
-            var statReader = new Utf8FileReader<X256>(serviceFile);
+            var statReader = new Utf8FileReader(serviceFile, 256);
             try
             {
                 statReader.SkipLine();
