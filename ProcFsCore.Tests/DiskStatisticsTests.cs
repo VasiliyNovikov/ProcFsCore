@@ -14,6 +14,8 @@ namespace ProcFsCore.Tests
                 Assert.IsNotNull(stat.DeviceName);
                 if (stat.DeviceName == "md0" ||
                     stat.DeviceName == "sr0" ||
+                    stat.DeviceName == "sda14" ||
+                    stat.DeviceName == "sda15" ||
                     stat.DeviceName.StartsWith("loop"))
                     continue;
 
