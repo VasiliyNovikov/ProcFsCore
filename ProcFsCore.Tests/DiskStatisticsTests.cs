@@ -16,6 +16,8 @@ namespace ProcFsCore.Tests
                     stat.DeviceName == "sr0" ||
                     stat.DeviceName == "sda14" ||
                     stat.DeviceName == "sda15" ||
+                    stat.DeviceName == "sdb14" ||
+                    stat.DeviceName == "sdb15" ||
                     stat.DeviceName.StartsWith("loop"))
                     continue;
 
