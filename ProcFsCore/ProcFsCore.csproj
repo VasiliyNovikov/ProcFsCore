@@ -5,7 +5,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>0.1.8</Version>
+    <Version>0.1.9</Version>
     <Authors>Vasiliy Novikov</Authors>
     <Description>Lightweight .NET Core procfs wrapper</Description>
     <PackageTags>linux;procfs</PackageTags>
@@ -17,7 +17,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="5.0.0" />
-    <PackageReference Include="System.Text.Json" Version="5.0.0" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="ProcFs.Cpu.cs">

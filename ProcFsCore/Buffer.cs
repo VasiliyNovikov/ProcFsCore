@@ -49,6 +49,7 @@ namespace ProcFsCore
 
             ArrayPool<T>.Shared.Return(_rentedBuffer);
             _rentedBuffer = null;
+            Length = 0;
         }
 
         public static Buffer<byte> FromFile(string fileName, int sizePrediction = 0)

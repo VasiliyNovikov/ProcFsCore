@@ -4,10 +4,8 @@ namespace ProcFsCore
 {
     public struct Utf8FileReader : IUtf8Reader
     {
-        // ReSharper disable StaticMemberInGenericType
         internal static readonly ReadOnlyMemory<byte> DefaultWhiteSpaces = " \n \t\v\f\r\x0085".ToUtf8();
         internal static readonly ReadOnlyMemory<byte> DefaultLineSeparators = "\n\r".ToUtf8();
-        // ReSharper restore StaticMemberInGenericType
 
         private readonly LightFileStream _stream;
         private readonly ReadOnlyMemory<byte> _whiteSpaces;
