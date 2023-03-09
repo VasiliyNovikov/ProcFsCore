@@ -21,7 +21,16 @@ namespace ProcFsCore.Tests
             RetryOnAssert(() =>
             {
                 process.Refresh();
-                p.Refresh();
+                try
+                {
+                    p.Refresh();
+                }
+                catch (FormatException)
+                {
+                    var procStats = File.ReadAllText($"/proc/{p.Pid}/stat");
+                    throw new AssertFailedException($"Failed to parse process information: {procStats}");
+                }
+
                 if (process.ProcessName != p.Name)
                     // .NET Core 3.x breaking change
                     Assert.IsTrue(p.CommandLine.Contains(process.ProcessName), $"Process name mismatch: {p.Name} ({p.CommandLine}) - {process.ProcessName}");
