@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.NetworkInformation;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -8,31 +9,34 @@ namespace ProcFsCore.Tests
     [TestClass]
     public class NetStatisticsTests : ProcFsTestsBase
     {
-        [TestMethod]
-        public void NetStatistics_All_Test()
+        private static void NetStatistics_All_Test(Func<IEnumerable<NetStatistics>> getStats)
         {
             RetryOnAssert(() =>
             {
-                var stats = ProcFs.Net.Statistics().ToDictionary(stat => stat.InterfaceName);
+                var stats = getStats().ToDictionary(stat => stat.InterfaceName);
                 var expectedStats = NetworkInterface.GetAllNetworkInterfaces()
-                    .ToDictionary(iface => iface.Name, iface => iface.GetIPStatistics());
+                                                    .ToDictionary(iface => iface.Name, iface => iface.GetIPStatistics());
                 foreach (var (name, expectedStat) in expectedStats)
                 {
                     var actualStat = stats[name];
 
-                    static long AdjustStat(long value) => Math.Min(UInt32.MaxValue, value);
-
-                    Assert.AreEqual(expectedStat.UnicastPacketsReceived, AdjustStat(actualStat.Receive.Packets), 100);
-                    Assert.AreEqual(expectedStat.BytesReceived, AdjustStat(actualStat.Receive.Bytes), 100000);
+                    Assert.AreEqual(expectedStat.UnicastPacketsReceived, actualStat.Receive.Packets, 100);
+                    Assert.AreEqual(expectedStat.BytesReceived, actualStat.Receive.Bytes, 100000);
                     Assert.AreEqual(expectedStat.IncomingPacketsDiscarded, actualStat.Receive.Drops);
                     Assert.AreEqual(expectedStat.IncomingPacketsWithErrors, actualStat.Receive.Errors);
                     
-                    Assert.AreEqual(expectedStat.UnicastPacketsSent, AdjustStat(actualStat.Transmit.Packets), 100);
-                    Assert.AreEqual(expectedStat.BytesSent, AdjustStat(actualStat.Transmit.Bytes), 100000);
+                    Assert.AreEqual(expectedStat.UnicastPacketsSent, actualStat.Transmit.Packets, 100);
+                    Assert.AreEqual(expectedStat.BytesSent, actualStat.Transmit.Bytes, 100000);
                     Assert.AreEqual(expectedStat.OutgoingPacketsDiscarded, actualStat.Transmit.Drops);
                     Assert.AreEqual(expectedStat.OutgoingPacketsWithErrors, actualStat.Transmit.Errors);
                 }
             }, 10);
         }
+
+        [TestMethod]
+        public void NetStatistics_All_Test() => NetStatistics_All_Test(ProcFs.Net.Statistics);
+
+        [TestMethod]
+        public void NetStatistics_All_For_Process_Test() => NetStatistics_All_Test(() => Process.Current.Net.Statistics);
     }
 }

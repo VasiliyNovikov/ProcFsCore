@@ -8,5 +8,5 @@ public readonly struct ProcessNet
 
     internal ProcessNet(int pid) => _pid = pid;
 
-    IEnumerable<NetStatistics> Statistics => NetStatistics.Get(_pid);
+    public IEnumerable<NetStatistics> Statistics => NetStatistics.Get(_pid);
 }
