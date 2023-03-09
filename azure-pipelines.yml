@@ -17,11 +17,6 @@ stages:
     pool:
       vmImage: $(imageName)
     steps:
-    - bash: |
-        echo "/proc/self/stat:"
-        cat /proc/self/stat
-      displayName: Debug information
-    
     - task: UseDotNet@2
       displayName: 'Install .NET Core SDK 6.0.x'
       inputs:
