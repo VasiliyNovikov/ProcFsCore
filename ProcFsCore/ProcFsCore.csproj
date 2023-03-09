@@ -8,7 +8,7 @@
     <Description>Lightweight .NET Core procfs wrapper</Description>
     <PackageTags>linux;procfs</PackageTags>
     <PackageProjectUrl>https://github.com/VasiliyNovikov/ProcFsCore</PackageProjectUrl>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/VasiliyNovikov/ProcFsCore/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Copyright>Vasiliy Novikov</Copyright>
     <RepositoryUrl>https://github.com/VasiliyNovikov/ProcFsCore</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
