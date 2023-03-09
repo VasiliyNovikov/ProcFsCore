@@ -63,6 +63,13 @@ namespace ProcFsCore
             reader.SkipSeparators(reader.WhiteSpaces);
         }
 
+        public static void SkipSeparator<TReader>(this ref TReader reader, char separator)
+            where TReader: struct, IUtf8Reader
+        {
+            Span<byte> separators = stackalloc byte[1] {(byte) separator};
+            reader.SkipSeparators(separators);
+        }
+
         public static string ReadStringWord<TReader>(this ref TReader reader)
             where TReader: struct, IUtf8Reader
         {

@@ -237,8 +237,9 @@ namespace ProcFsCore
                 statReader.SkipWord();
 
                 // (2) name
-                var name = statReader.ReadWord();
-                _name = name.Slice(1, name.Length - 2).ToUtf8String();
+                statReader.SkipSeparator('(');
+                _name = statReader.ReadFragment(')').ToUtf8String();
+                statReader.SkipWhiteSpaces();
 
                 // (3) state
                 _state = GetProcessState((char) statReader.ReadWord()[0]);
