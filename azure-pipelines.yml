@@ -8,34 +8,24 @@ stages:
   - job: Build
     strategy:
       matrix:
-        Ubuntu_16:
-          imageName: ubuntu-16.04
         Ubuntu_18:
           imageName: ubuntu-18.04
         Ubuntu_20:
           imageName: ubuntu-20.04
+        Ubuntu_22:
+          imageName: ubuntu-22.04
     pool:
       vmImage: $(imageName)
     steps:
-    - bash: |
-        echo "/proc/diskstats:"
-        cat /proc/diskstats
-      displayName: Show stuff from procfs
+    - task: UseDotNet@2
+      displayName: 'Install .NET Core SDK 6.0.x'
+      inputs:
+        version: 6.0.x
 
     - task: UseDotNet@2
-      displayName: 'Install .NET Core SDK 2.1.x'
+      displayName: 'Install .NET Core SDK 7.0.x'
       inputs:
-        version: 2.1.x
-
-    - task: UseDotNet@2
-      displayName: 'Install .NET Core SDK 3.1.x'
-      inputs:
-        version: 3.1.x
-
-    - task: UseDotNet@2
-      displayName: 'Install .NET Core SDK 5.0.x'
-      inputs:
-        version: 5.0.x
+        version: 7.0.x
 
     - task: DotNetCoreCLI@2
       displayName: Restore

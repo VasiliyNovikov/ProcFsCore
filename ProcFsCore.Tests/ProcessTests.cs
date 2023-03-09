@@ -22,13 +22,9 @@ namespace ProcFsCore.Tests
             {
                 process.Refresh();
                 p.Refresh();
-#if NET3PLUS
                 if (process.ProcessName != p.Name)
                     // .NET Core 3.x breaking change
                     Assert.IsTrue(p.CommandLine.Contains(process.ProcessName), $"Process name mismatch: {p.Name} ({p.CommandLine}) - {process.ProcessName}");
-#else
-                Assert.AreEqual(process.ProcessName, p.Name);
-#endif
             });
 
             Assert.IsNotNull(p.CommandLine);
@@ -92,8 +88,8 @@ namespace ProcFsCore.Tests
         [TestMethod]
         public void Process_All_Test()
         {
-            Dictionary<int, Process> pis = null;
-            Dictionary<int, DiagnosticsProcess> processes = null;
+            Dictionary<int, Process>? pis = null;
+            Dictionary<int, DiagnosticsProcess>? processes = null;
             RetryOnAssert(() =>
             {
                 pis = ProcFs.Processes().ToDictionary(pi => pi.Pid);
@@ -102,9 +98,9 @@ namespace ProcFsCore.Tests
                 CollectionAssert.AreEquivalent(pis.Keys, processes.Keys);
             });
             
-            foreach (var pi in pis.Values)
+            foreach (var pi in pis!.Values)
             {
-                var process = processes[pi.Pid];
+                var process = processes![pi.Pid];
                 VerifyProcess(pi, process);
             }
         }

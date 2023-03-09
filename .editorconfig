@@ -1,0 +1,6 @@
+[*]
+indent_style = space
+end_of_line = lf
+
+[*.cs]
+dotnet_diagnostic.CA1416.severity = none  # https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1416

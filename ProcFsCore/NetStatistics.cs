@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 
 namespace ProcFsCore
 {
     public readonly struct NetStatistics
     {
-        private const string NetDevPath = ProcFs.RootPath + "/net/dev";
+        private const string NetDevRelativePath = "/net/dev";
+        private const string NetDevPath = ProcFs.RootPath + NetDevRelativePath;
 
         private static readonly int ReceiveColumnCount;
 
@@ -50,9 +52,13 @@ namespace ProcFsCore
 
         private static readonly ReadOnlyMemory<byte> InterfaceNameSeparators = ": ".ToUtf8();
 
-        internal static IEnumerable<NetStatistics> GetAll()
+        internal static IEnumerable<NetStatistics> GetAll() => GetAll(NetDevPath);
+
+        internal static IEnumerable<NetStatistics> Get(int pid) => GetAll($"{ProcFs.RootPath}/{pid}{NetDevRelativePath}");
+
+        private static IEnumerable<NetStatistics> GetAll(string path)
         {
-            var statReader = new Utf8FileReader(NetDevPath, 2048);
+            var statReader = new Utf8FileReader(path, 2048);
             try
             {
                 statReader.SkipLine();

@@ -11,13 +11,13 @@ namespace ProcFsCore
 
         [DllImport("libc", EntryPoint = "sysconf", SetLastError = true)]
         public static extern int SystemConfig(SystemConfigName name);
-        
+
         public enum SystemConfigName
         {
             PageSize = 1,
             TicksPerSecond = 2
         }
-        
+
         [DllImport("libc", EntryPoint = "readlink", SetLastError = true)]
         private static extern unsafe IntPtr ReadLink(string path, void* buffer, IntPtr bufferSize);
 

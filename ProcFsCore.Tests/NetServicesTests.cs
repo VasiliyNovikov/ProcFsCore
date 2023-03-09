@@ -12,20 +12,10 @@ namespace ProcFsCore.Tests
     {
         private static void VerifyEndpoint(IPEndPoint expected, IPEndPoint actual)
         {
-            if (actual != null)
-            {
-                Assert.AreEqual(expected.AddressFamily, actual.AddressFamily);
-                Assert.AreEqual(expected.Port, actual.Port);
-                if (expected.AddressFamily != AddressFamily.InterNetworkV6)
-                    Assert.AreEqual(expected.Address, actual.Address);
-                return;
-            }
-
-            Assert.AreEqual(0, expected.Port);
-            Span<byte> addressBytes = stackalloc byte[16];
-            expected.Address.TryWriteBytes(addressBytes, out var addressLength);
-            foreach (var part in addressBytes.Slice(0, addressLength))
-                Assert.AreEqual(0, part);
+            Assert.AreEqual(expected.AddressFamily, actual.AddressFamily);
+            Assert.AreEqual(expected.Port, actual.Port);
+            if (expected.AddressFamily != AddressFamily.InterNetworkV6)
+                Assert.AreEqual(expected.Address, actual.Address);
         }
 
         private static void VerifyState(TcpState expected, NetServiceState actual)
@@ -87,10 +77,6 @@ namespace ProcFsCore.Tests
                                                   .ToArray();
                 var expectedServices = IPGlobalProperties.GetIPGlobalProperties()
                                                          .GetActiveTcpConnections()
-#if !NET3PLUS
-                                                        // .NET Core 3.x breaking change
-                                                         .Where(s => s.State != TcpState.Listen)
-#endif
                                                          .ToArray();
                 Assert.AreEqual(expectedServices.Length, services.Length);
                 for (var i = 0; i < services.Length; ++i)
@@ -113,17 +99,8 @@ namespace ProcFsCore.Tests
                                                   .Concat(ProcFs.Net.Services.Tcp(NetAddressVersion.IPv6))
                                                   .Where(s => s.State == NetServiceState.Listen)
                                                   .ToArray();
-#if NET3PLUS
-                // .NET Core 3.x breaking change
                 var expectedServices = IPGlobalProperties.GetIPGlobalProperties()
                                                          .GetActiveTcpListeners();
-#else
-                var expectedServices = IPGlobalProperties.GetIPGlobalProperties()
-                                                         .GetActiveTcpConnections()
-                                                         .Where(s => s.State == TcpState.Listen)
-                                                         .Select(s => s.LocalEndPoint)
-                                                         .ToArray();
-#endif
                 Assert.AreEqual(expectedServices.Length, services.Length);
                 for (var i = 0; i < services.Length; ++i)
                 {

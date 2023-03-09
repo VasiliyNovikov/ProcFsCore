@@ -1,15 +1,24 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{15B73AF2-1836-4377-BBAF-9217A18AE152}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		.editorconfig = .editorconfig
+		LICENSE = LICENSE
+		README.md = README.md
+		Directory.Packages.props = Directory.Packages.props
+		ProcFsCore.targets = ProcFsCore.targets
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{41419CFF-EBAD-4615-A6DF-9895DBBA9258}"
+    ProjectSection(SolutionItems) = preProject
+        azure-pipelines.yml = azure-pipelines.yml
+    EndProjectSection
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcFsCore", "ProcFsCore\ProcFsCore.csproj", "{2EC0D396-6D0E-4209-9607-46CC34A0D662}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcFsCore.Tests", "ProcFsCore.Tests\ProcFsCore.Tests.csproj", "{BAE896BE-44A8-4FC0-9178-6BD809930985}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcFsCore.Benchmarks", "ProcFsCore.Benchmarks\ProcFsCore.Benchmarks.csproj", "{3D689733-5265-4002-9AF7-10C6715EBB4C}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{41419CFF-EBAD-4615-A6DF-9895DBBA9258}"
-ProjectSection(SolutionItems) = preProject
-	azure-pipelines.yml = azure-pipelines.yml
-EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcFsCore.Experiments", "ProcFsCore.Experiments\ProcFsCore.Experiments.csproj", "{5C0C17EC-64A0-43AA-9A56-50D7E44ECB77}"
 EndProject
