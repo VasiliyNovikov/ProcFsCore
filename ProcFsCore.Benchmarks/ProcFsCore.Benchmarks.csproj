@@ -10,9 +10,4 @@
   <ItemGroup>
     <ProjectReference Include="..\ProcFsCore\ProcFsCore.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\ProcFsCore\PlatformRestriction.cs">
-      <Link>PlatformRestriction.cs</Link>
-    </Compile>
-  </ItemGroup>
 </Project>

@@ -13,9 +13,6 @@
     <ProjectReference Include="..\ProcFsCore\ProcFsCore.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\ProcFsCore\PlatformRestriction.cs">
-      <Link>PlatformRestriction.cs</Link>
-    </Compile>
     <None Update="proc\net\arp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
