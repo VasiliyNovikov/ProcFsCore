@@ -18,6 +18,6 @@ namespace ProcFsCore
 
         public override string? ToString() => ((IPEndPoint?)this)?.ToString();
         
-        public static implicit operator IPEndPoint?(in NetEndPoint endPoint) => endPoint.IsEmpty ? null : new IPEndPoint(endPoint.Address, endPoint.Port);
+        public static implicit operator IPEndPoint(in NetEndPoint endPoint) => new(endPoint.Address, endPoint.Port);
     }
 }

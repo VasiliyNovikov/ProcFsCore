@@ -12,13 +12,13 @@ namespace ProcFsCore
         
         public int Pid { get; }
 
-        private string _name;
+        private string? _name;
         public string Name
         {
             get
             {
                 EnsureInitialized();
-                return _name;
+                return _name!;
             }
         }
 
@@ -207,7 +207,9 @@ namespace ProcFsCore
 
         public ProcessIO IO => ProcessIO.Get(Pid);
 
-        public static Process Current => new Process(CurrentPid);
+        public ProcessNet Net => new(Pid);
+
+        public static Process Current => new(CurrentPid);
         
         public Process(int pid)
             : this()
@@ -220,7 +222,7 @@ namespace ProcFsCore
             if (!_initialized) 
                 Refresh();
         }
-        
+
         public void Refresh()
         {
             _initialized = false;
@@ -235,8 +237,9 @@ namespace ProcFsCore
                 statReader.SkipWord();
 
                 // (2) name
-                var name = statReader.ReadWord();
-                _name = name.Slice(1, name.Length - 2).ToUtf8String();
+                statReader.SkipSeparator('(');
+                _name = statReader.ReadFragment(')').ToUtf8String();
+                statReader.SkipWhiteSpaces();
 
                 // (3) state
                 _state = GetProcessState((char) statReader.ReadWord()[0]);

@@ -14,7 +14,7 @@ namespace ProcFsCore
         }
 
         private static readonly ReadOnlyMemory<byte> StatNameSeparators = ": ".ToUtf8();
-        public static ProcessIO Get(int pid)
+        internal static ProcessIO Get(int pid)
         {
             var statReader = new Utf8FileReader($"{ProcFs.RootPath}/{pid}/io", 256);
             try
