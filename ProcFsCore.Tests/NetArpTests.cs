@@ -27,7 +27,7 @@ namespace ProcFsCore.Tests
                 Assert.AreEqual("*", entry.Mask);
                 Assert.AreEqual(device, entry.Device);
             }
-            
+
             VerifyEntry(entries[0], "10.164.164.4", "4c:77:6d:ab:7a:bf", "br1");
             VerifyEntry(entries[1], "10.164.164.14", "a8:0c:0d:1e:56:0b", "br1");
             VerifyEntry(entries[2], "10.10.144.66", "f2:00:00:00:20:00", "br0");

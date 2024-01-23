@@ -3,7 +3,7 @@
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>0.1.10</Version>
+    <Version>0.1.11</Version>
     <Authors>Vasiliy Novikov</Authors>
     <Description>Lightweight .NET Core procfs wrapper</Description>
     <PackageTags>linux;procfs</PackageTags>
