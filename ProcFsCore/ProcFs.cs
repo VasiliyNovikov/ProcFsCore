@@ -1,59 +1,49 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 
 namespace ProcFsCore
 {
-    public static partial class ProcFs
+    public class ProcFs
     {
-        internal const string RootPath = "/proc";
-        private const string StatPath = RootPath + "/stat";
+        private const string DefaultRootPath = "/proc";
+
+        public static int TicksPerSecond { get; } = Native.SystemConfig(Native.SystemConfigName.TicksPerSecond);
+
+        public static readonly ProcFs Default = new();
+
+        private readonly ProcFsBootTime _bootTime;
+        private readonly bool _isDefault;
+
+        public string RootPath { get; }
+
+        public DateTime BootTimeUtc => _bootTime.UtcValue;
+
+        public ProcFsCpu Cpu { get; }
+
+        public ProcFsDisk Disk { get; }
         
-        public static readonly int TicksPerSecond = Native.SystemConfig(Native.SystemConfigName.TicksPerSecond);
+        public ProcFsMemory Memory { get; }
 
-        private static readonly TimeSpan BootTimeCacheInterval = TimeSpan.FromSeconds(0.5);
-        private static DateTime? _bootTimeUtc;
-        private static readonly Stopwatch BootTimeCacheTimer = new Stopwatch();
-        private static readonly ReadOnlyMemory<byte> BtimeStr = "btime ".ToUtf8();
-        public static DateTime BootTimeUtc
+        public ProcFsNet Net { get; }
+
+        public ProcFs(string rootPath = DefaultRootPath)
         {
-            get
-            {
-                lock (BootTimeCacheTimer)
-                {
-                    if (_bootTimeUtc == null || BootTimeCacheTimer.Elapsed > BootTimeCacheInterval)
-                    {
-                        var statReader = new Utf8FileReader(StatPath, 4096);
-                        try
-                        {
-                            statReader.SkipFragment(BtimeStr.Span, true);
-                            if (statReader.EndOfStream)
-                                throw new NotSupportedException();
-
-                            var bootTimeSeconds = statReader.ReadInt64();
-                            _bootTimeUtc = DateTime.UnixEpoch + TimeSpan.FromSeconds(bootTimeSeconds);
-                            BootTimeCacheTimer.Restart();
-                        }
-                        finally
-                        {
-                            statReader.Dispose();
-                        }
-                    }
-
-                    return _bootTimeUtc.Value;
-                }
-            }
+            RootPath = rootPath;
+            _bootTime = new ProcFsBootTime(this);
+            Cpu = new ProcFsCpu(this);
+            Disk = new ProcFsDisk(this);
+            Memory = new ProcFsMemory(this);
+            Net = new ProcFsNet(this);
+            _isDefault = rootPath == DefaultRootPath;
         }
 
-        public static IEnumerable<Process> Processes()
-        {
-            foreach (var pidPath in Directory.EnumerateDirectories(RootPath))
-            {
-                var pidDir = Path.GetFileName(pidPath);
-                if (Int32.TryParse(pidDir, out var pid))
-                    yield return new Process(pid);
-            }
-        }
+        internal string PathFor(string path) => Path.Combine(RootPath, path);
+
+        public IEnumerable<Process> Processes() => ProcFsCore.Process.GetAll(this);
+
+        public Process Process(int pid) => new(this, pid);
+
+        public Process CurrentProcess => Process(_isDefault ? Native.GetPid() : 0); // 0 - special case for current process of non-default instance
     }
 }

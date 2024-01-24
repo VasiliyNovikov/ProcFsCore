@@ -10,14 +10,15 @@ namespace ProcFsCore.Tests
         [TestMethod]
         public void NetArpEntry_Get_Test()
         {
-            var entries = ProcFs.Net.Arp().ToList();
+            var entries = ProcFs.Default.Net.Arp().ToList();
             Assert.IsTrue(entries.Count > 0);
         }
 
         [TestMethod]
         public void NetArpEntry_Parse_Test()
         {
-            var entries = NetArpEntry.Get(GetTestProcFsFile("/proc/net/arp")).ToList();
+            var testProcFs = TestProcFs();
+            var entries = testProcFs.Net.Arp().ToList();
             Assert.AreEqual(5, entries.Count);
 
             static void VerifyEntry(in NetArpEntry entry, string address, string hardwareAddress, string device)

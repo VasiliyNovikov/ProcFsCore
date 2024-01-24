@@ -29,7 +29,7 @@ namespace ProcFsCore.Benchmarks
         [Benchmark]
         public void ProcFs_GetAllProcesses()
         {
-            foreach (var process in ProcFs.Processes())
+            foreach (var process in ProcFs.Default.Processes())
             {
                 try
                 {

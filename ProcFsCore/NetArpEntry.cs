@@ -4,8 +4,6 @@ namespace ProcFsCore
 {
     public readonly struct NetArpEntry
     {
-        private const string NetArpPath = ProcFs.RootPath + "/net/arp";
-        
         public NetAddress Address { get; }
         public NetHardwareAddress HardwareAddress { get; }
         public string Mask { get; }
@@ -21,11 +19,9 @@ namespace ProcFsCore
 
         public override string ToString() => $"{Address.ToString()} {HardwareAddress.ToString()} {Mask} {Device}";
 
-        internal static IEnumerable<NetArpEntry> Get() => Get(NetArpPath);
-        
-        internal static IEnumerable<NetArpEntry> Get(string netArpPath)
+        internal static IEnumerable<NetArpEntry> GetAll(ProcFs instance)
         {
-            var statReader = new Utf8FileReader(netArpPath, 1024);
+            var statReader = new Utf8FileReader(instance.PathFor("net/arp"), 1024);
             try
             {
                 statReader.SkipLine();

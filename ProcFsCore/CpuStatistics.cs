@@ -6,8 +6,8 @@ namespace ProcFsCore
 {
     public struct CpuStatistics
     {
-        private const string StatPath = ProcFs.RootPath + "/stat";
-        
+        private static readonly ReadOnlyMemory<byte> CpuNumberStart = "cpu".ToUtf8();
+
         public short? CpuNumber { get; private set; }
         public double UserTime { get; private set; }
         public double NiceTime { get; private set; }
@@ -16,10 +16,9 @@ namespace ProcFsCore
         public double IrqTime { get; private set; }
         public double SoftIrqTime { get; private set; }
 
-        private static readonly ReadOnlyMemory<byte> CpuNumberStart = "cpu".ToUtf8();
-        internal static IEnumerable<CpuStatistics> GetAll()
+        internal static IEnumerable<CpuStatistics> GetAll(ProcFs instance)
         {
-            var statReader = new Utf8FileReader(StatPath, 4096);
+            var statReader = new Utf8FileReader(instance.PathFor("stat"), 4096);
             try
             {
                 while (!statReader.EndOfStream)
@@ -38,7 +37,7 @@ namespace ProcFsCore
                         cpuNumber = num;
                     }
 
-                    var ticksPerSecond = (double) ProcFs.TicksPerSecond;
+                    var ticksPerSecond = (double)ProcFs.TicksPerSecond;
                     var userTime = statReader.ReadInt64() / ticksPerSecond;
                     var niceTime = statReader.ReadInt64() / ticksPerSecond;
                     var kernelTime = statReader.ReadInt64() / ticksPerSecond;

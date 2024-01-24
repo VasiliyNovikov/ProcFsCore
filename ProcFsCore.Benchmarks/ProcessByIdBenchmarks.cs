@@ -20,7 +20,7 @@ namespace ProcFsCore.Benchmarks
         [Benchmark]
         public void ProcFs_GetProcessById()
         {
-            var process = new Process(1);
+            var process = ProcFs.Default.Process(1);
             process.Refresh();
             Use(process.Pid);
             Use(process.Name);

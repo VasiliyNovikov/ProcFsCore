@@ -7,19 +7,17 @@ namespace ProcFsCore
 {
     public struct MemoryStatistics
     {
-        private const string StatPath = ProcFs.RootPath + "/meminfo";
-        
+        private static readonly List<ReadOnlyMemory<byte>> Names = Enum.GetNames(typeof(Section)).Select(n => n.ToUtf8()).ToList();
+
         public long Total { get; private set; }
         public long Available { get; private set; }
         public long Free { get; private set; }
         public long SwapTotal { get; private set; }
         public long SwapFree { get; private set; }
 
-        private static readonly List<ReadOnlyMemory<byte>> Names = Enum.GetNames(typeof(Section)).Select(n => n.ToUtf8()).ToList();
-
-        internal static unsafe MemoryStatistics Get()
+        internal static unsafe MemoryStatistics Get(ProcFs instance)
         {
-            var statReader = new Utf8FileReader(StatPath, 2048);
+            var statReader = new Utf8FileReader(instance.PathFor("meminfo"), 2048);
             try
             {
                 var sections = stackalloc long[(int) Section.Max];

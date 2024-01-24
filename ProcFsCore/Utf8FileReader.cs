@@ -4,7 +4,7 @@ namespace ProcFsCore
 {
     public struct Utf8FileReader : IUtf8Reader
     {
-        internal static readonly ReadOnlyMemory<byte> DefaultWhiteSpaces = " \n \t\v\f\r\x0085".ToUtf8();
+        internal static readonly ReadOnlyMemory<byte> DefaultWhiteSpaces = " \n\t\v\f\r".ToUtf8();
         internal static readonly ReadOnlyMemory<byte> DefaultLineSeparators = "\n\r".ToUtf8();
 
         private readonly LightFileStream _stream;
@@ -114,6 +114,7 @@ namespace ProcFsCore
             if (EndOfStream)
                 return;
 
+            var consumePadding = isSingleString ? separators.Length : 0;
             EnsureReadToBuffer();
 
             while (!_endOfStream)
@@ -128,8 +129,8 @@ namespace ProcFsCore
                     break;
                 }
 
-                ConsumeBuffer(_bufferedEnd - _bufferedStart);
-                EnsureReadToBuffer();
+                ConsumeBuffer(Math.Max(_bufferedEnd - _bufferedStart - consumePadding, 0));
+                ReadToBuffer();
             }
 
             if (!EndOfStream)

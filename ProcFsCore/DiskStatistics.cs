@@ -5,7 +5,6 @@ namespace ProcFsCore
 {
     public readonly struct DiskStatistics
     {
-        private const string DiskStatsPath = ProcFs.RootPath + "/diskstats";
         private const long SectorSize = 512; 
 
         public string DeviceName { get; }
@@ -27,11 +26,12 @@ namespace ProcFsCore
 
         private static readonly ReadOnlyMemory<byte> LoopDeviceStart = "loop".ToUtf8();
 
-        internal static IEnumerable<DiskStatistics> GetAll()
+        internal static IEnumerable<DiskStatistics> GetAll(ProcFs instance)
         {
             // http://man7.org/linux/man-pages/man5/proc.5.html
             // https://www.kernel.org/doc/Documentation/iostats.txt
-            var statsReader = new Utf8FileReader(DiskStatsPath, 1024);
+            var diskStatsPath = instance.PathFor("diskstats");
+            var statsReader = new Utf8FileReader(diskStatsPath, 1024);
             try
             {
                 while (!statsReader.EndOfStream)

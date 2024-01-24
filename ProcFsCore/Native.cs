@@ -6,10 +6,11 @@ namespace ProcFsCore
 {
     public static class Native
     {
-        [DllImport("libc", EntryPoint = "getpid")]
+        public const string LibC = "libc.so.6";
+        [DllImport(LibC, EntryPoint = "getpid")]
         public static extern int GetPid();
 
-        [DllImport("libc", EntryPoint = "sysconf", SetLastError = true)]
+        [DllImport(LibC, EntryPoint = "sysconf", SetLastError = true)]
         public static extern int SystemConfig(SystemConfigName name);
 
         public enum SystemConfigName
@@ -18,7 +19,7 @@ namespace ProcFsCore
             TicksPerSecond = 2
         }
 
-        [DllImport("libc", EntryPoint = "readlink", SetLastError = true)]
+        [DllImport(LibC, EntryPoint = "readlink", SetLastError = true)]
         private static extern unsafe IntPtr ReadLink(string path, void* buffer, IntPtr bufferSize);
 
         public static unsafe Buffer<byte> ReadLink(string path)
@@ -44,7 +45,7 @@ namespace ProcFsCore
             }
         }
 
-        [DllImport("libc", EntryPoint = "open", SetLastError = true)]
+        [DllImport(LibC, EntryPoint = "open", SetLastError = true)]
         private static extern int OpenRaw(string path, int flags);
         public static int Open(string path, int flags)
         {
@@ -54,7 +55,7 @@ namespace ProcFsCore
             return descriptor;
         }
         
-        [DllImport("libc", EntryPoint = "close", SetLastError = true)]
+        [DllImport(LibC, EntryPoint = "close", SetLastError = true)]
         private static extern int CloseRaw(int descriptor);
         public static void Close(int descriptor)
         {
@@ -63,7 +64,7 @@ namespace ProcFsCore
         }
         
         
-        [DllImport("libc", EntryPoint = "read", SetLastError = true)]
+        [DllImport(LibC, EntryPoint = "read", SetLastError = true)]
         private static extern unsafe IntPtr Read(int descriptor, void* buffer, IntPtr bufferSize);
         public static unsafe int Read(int descriptor, Span<byte> buffer)
         {
@@ -76,7 +77,7 @@ namespace ProcFsCore
             }
         }
         
-        [DllImport("libc", EntryPoint = "write", SetLastError = true)]
+        [DllImport(LibC, EntryPoint = "write", SetLastError = true)]
         private static extern unsafe IntPtr Write(int descriptor, void* buffer, IntPtr bufferSize);
         public static unsafe int Write(int descriptor, ReadOnlySpan<byte> buffer)
         {

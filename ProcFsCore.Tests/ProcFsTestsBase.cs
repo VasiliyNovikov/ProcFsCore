@@ -6,7 +6,7 @@ namespace ProcFsCore.Tests
 {
     public class ProcFsTestsBase
     {
-        protected static string GetTestProcFsFile(string path) => Path.Combine(Environment.CurrentDirectory, path.Substring(1));
+        protected static ProcFs TestProcFs() => new(Path.Combine(Environment.CurrentDirectory, "proc"));
 
         protected static void RetryOnAssert(Action action, int count = 3)
         {

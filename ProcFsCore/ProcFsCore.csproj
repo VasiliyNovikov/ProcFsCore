@@ -3,7 +3,7 @@
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>0.1.11</Version>
+    <Version>0.2.0</Version>
     <Authors>Vasiliy Novikov</Authors>
     <Description>Lightweight .NET Core procfs wrapper</Description>
     <PackageTags>linux;procfs</PackageTags>
@@ -14,17 +14,5 @@
     <RepositoryType>GitHub</RepositoryType>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Update="ProcFs.Cpu.cs">
-      <DependentUpon>ProcFs.cs</DependentUpon>
-    </Compile>
-    <Compile Update="ProcFs.Disk.cs">
-      <DependentUpon>ProcFs.cs</DependentUpon>
-    </Compile>
-    <Compile Update="ProcFs.Memory.cs">
-      <DependentUpon>ProcFs.cs</DependentUpon>
-    </Compile>
-    <Compile Update="ProcFs.Net.cs">
-      <DependentUpon>ProcFs.cs</DependentUpon>
-    </Compile>
   </ItemGroup>
 </Project>

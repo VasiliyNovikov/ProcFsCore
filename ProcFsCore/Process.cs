@@ -6,11 +6,19 @@ namespace ProcFsCore
 {
     public struct Process
     {
-        private static readonly int CurrentPid = Native.GetPid();
-
+        private readonly ProcFs _instance;
         private bool _initialized;
-        
-        public int Pid { get; }
+
+        private int _pid;
+        public int Pid
+        {
+            get
+            {
+                if (_pid == 0)
+                    EnsureInitialized();
+                return _pid;
+            }
+        }
 
         private string? _name;
         public string Name
@@ -172,7 +180,7 @@ namespace ProcFsCore
                 {
                     try
                     {
-                        using var cmdLineBuffer = Buffer<byte>.FromFile($"{ProcFs.RootPath}/{Pid}/cmdline", 256);
+                        using var cmdLineBuffer = Buffer<byte>.FromFile(_instance.PathFor($"{Pid}/cmdline"), 256);
                         var cmdLineSpan = cmdLineBuffer.Span.Trim(ZeroPredicate);
                         _commandLine = cmdLineSpan.IsEmpty ? "" : cmdLineSpan.ToUtf8String();
                     }
@@ -191,7 +199,7 @@ namespace ProcFsCore
         {
             get
             {
-                _startTimeUtc ??= ProcFs.BootTimeUtc + TimeSpan.FromSeconds(StartTimeTicks / (double) ProcFs.TicksPerSecond);
+                _startTimeUtc ??= _instance.BootTimeUtc + TimeSpan.FromSeconds(StartTimeTicks / (double) ProcFs.TicksPerSecond);
                 return _startTimeUtc.Value;
             }
         }
@@ -200,21 +208,20 @@ namespace ProcFsCore
         {
             get
             {
-                foreach (var linkFile in Directory.EnumerateFiles($"{ProcFs.RootPath}/{Pid}/fd"))
+                foreach (var linkFile in Directory.EnumerateFiles(_instance.PathFor($"{Pid}/fd")))
                     yield return Link.Read(linkFile);
             }
         }
 
-        public ProcessIO IO => ProcessIO.Get(Pid);
+        public ProcessIO IO => ProcessIO.Get(_instance, Pid);
 
-        public ProcessNet Net => new(Pid);
+        public ProcessNet Net => new(_instance, Pid);
 
-        public static Process Current => new(CurrentPid);
-        
-        public Process(int pid)
+        internal Process(ProcFs instance, int pid)
             : this()
         {
-            Pid = pid;
+            _instance = instance;
+            _pid = pid;
         }
 
         private void EnsureInitialized()
@@ -228,13 +235,14 @@ namespace ProcFsCore
             _initialized = false;
             _commandLine = null;
             _startTimeUtc = null;
-            var statReader = new Utf8FileReader($"{ProcFs.RootPath}/{Pid}/stat", 512);
+            var statPath = _instance.PathFor(Pid == 0 ? "self/stat" : $"{Pid}/stat"); // 0 - special case for current process of non-default instance
+            var statReader = new Utf8FileReader(statPath, 512);
             try
             {
                 // See http://man7.org/linux/man-pages/man5/proc.5.html /proc/[pid]/stat section
 
                 // (1) pid
-                statReader.SkipWord();
+                _pid = statReader.ReadInt32();
 
                 // (2) name
                 statReader.SkipSeparator('(');
@@ -315,6 +323,13 @@ namespace ProcFsCore
             _initialized = true;
         }
 
+        internal static IEnumerable<Process> GetAll(ProcFs instance)
+        {
+            foreach (var pidPath in Directory.EnumerateDirectories(instance.RootPath))
+                if (int.TryParse(Path.GetFileName(pidPath), out var pid))
+                    yield return new Process(instance, pid);
+        }
+        
         private static ProcessState GetProcessState(char state)
         {
             switch (state)

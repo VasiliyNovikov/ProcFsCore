@@ -11,7 +11,7 @@ namespace ProcFsCore.Tests
         [TestMethod]
         public void CpuStatistics_All_Test()
         {
-            var stats = ProcFs.Cpu.Statistics().ToList();
+            var stats = ProcFs.Default.Cpu.Statistics().ToList();
             Assert.AreEqual(Environment.ProcessorCount, stats.Count - 1);
             var i = -1;
             foreach (var stat in stats)
@@ -29,7 +29,7 @@ namespace ProcFsCore.Tests
         {
             var sw = new Stopwatch();
             sw.Start();
-            var stats = ProcFs.Cpu.Statistics().ToList();
+            var stats = ProcFs.Default.Cpu.Statistics().ToList();
             var cpuTimeError = sw.Elapsed.TotalSeconds * Environment.ProcessorCount + 2.0 / ProcFs.TicksPerSecond;
                 
             var wholeStat = stats[0];

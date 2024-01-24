@@ -71,8 +71,8 @@ namespace ProcFsCore.Tests
         {
             RetryOnAssert(() =>
             {
-                var services = ProcFs.Net.Services.Tcp(NetAddressVersion.IPv4)
-                                                  .Concat(ProcFs.Net.Services.Tcp(NetAddressVersion.IPv6))
+                var services = ProcFs.Default.Net.Services.Tcp(NetAddressVersion.IPv4)
+                                                  .Concat(ProcFs.Default.Net.Services.Tcp(NetAddressVersion.IPv6))
                                                   .Where(s => s.State != NetServiceState.Listen)
                                                   .ToArray();
                 var expectedServices = IPGlobalProperties.GetIPGlobalProperties()
@@ -95,10 +95,10 @@ namespace ProcFsCore.Tests
         {
             RetryOnAssert(() =>
             {
-                var services = ProcFs.Net.Services.Tcp(NetAddressVersion.IPv4)
-                                                  .Concat(ProcFs.Net.Services.Tcp(NetAddressVersion.IPv6))
-                                                  .Where(s => s.State == NetServiceState.Listen)
-                                                  .ToArray();
+                var services = ProcFs.Default.Net.Services.Tcp(NetAddressVersion.IPv4)
+                                                                     .Concat(ProcFs.Default.Net.Services.Tcp(NetAddressVersion.IPv6))
+                                                                     .Where(s => s.State == NetServiceState.Listen)
+                                                                     .ToArray();
                 var expectedServices = IPGlobalProperties.GetIPGlobalProperties()
                                                          .GetActiveTcpListeners();
                 Assert.AreEqual(expectedServices.Length, services.Length);
@@ -116,7 +116,7 @@ namespace ProcFsCore.Tests
         {
             RetryOnAssert(() =>
             {
-                var services = ProcFs.Net.Services.Udp(NetAddressVersion.IPv4).Concat(ProcFs.Net.Services.Udp(NetAddressVersion.IPv6)).ToArray();
+                var services = ProcFs.Default.Net.Services.Udp(NetAddressVersion.IPv4).Concat(ProcFs.Default.Net.Services.Udp(NetAddressVersion.IPv6)).ToArray();
                 var expectedEndpoints = IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners();
                 Assert.AreEqual(expectedEndpoints.Length, services.Length);
                 for (var i = 0; i < services.Length; ++i)
@@ -131,7 +131,7 @@ namespace ProcFsCore.Tests
         [TestMethod]
         public void NetServices_Unix_Test()
         {
-            var services = ProcFs.Net.Services.Unix().ToArray();
+            var services = ProcFs.Default.Net.Services.Unix().ToArray();
             foreach (var service in services)
                 if (service.Path != null)
                     Assert.IsTrue(service.Path.Length > 0);
@@ -140,7 +140,7 @@ namespace ProcFsCore.Tests
         [TestMethod]
         public void NetServices_Raw_Test()
         {
-            var services = ProcFs.Net.Services.Raw(NetAddressVersion.IPv4).Concat(ProcFs.Net.Services.Raw(NetAddressVersion.IPv6)).ToArray();
+            var services = ProcFs.Default.Net.Services.Raw(NetAddressVersion.IPv4).Concat(ProcFs.Default.Net.Services.Raw(NetAddressVersion.IPv6)).ToArray();
             foreach (var service in services)
                 Assert.IsTrue(!service.LocalEndPoint.IsEmpty || !service.RemoteEndPoint.IsEmpty);
         }
