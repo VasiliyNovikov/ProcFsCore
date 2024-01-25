@@ -8,12 +8,11 @@ namespace ProcFsCore
     {
         private const string DefaultRootPath = "/proc";
 
-        public static int TicksPerSecond { get; } = Native.SystemConfig(Native.SystemConfigName.TicksPerSecond);
-
         public static readonly ProcFs Default = new();
 
         private readonly ProcFsBootTime _bootTime;
-        private readonly bool _isDefault;
+
+        internal readonly bool IsDefault;
 
         public string RootPath { get; }
 
@@ -35,7 +34,7 @@ namespace ProcFsCore
             Disk = new ProcFsDisk(this);
             Memory = new ProcFsMemory(this);
             Net = new ProcFsNet(this);
-            _isDefault = rootPath == DefaultRootPath;
+            IsDefault = rootPath == DefaultRootPath;
         }
 
         internal string PathFor(string path) => Path.Combine(RootPath, path);
@@ -44,6 +43,6 @@ namespace ProcFsCore
 
         public Process Process(int pid) => new(this, pid);
 
-        public Process CurrentProcess => Process(_isDefault ? Native.GetPid() : 0); // 0 - special case for current process of non-default instance
+        public Process CurrentProcess => Process(IsDefault ? Native.GetPid() : 0); // 0 - special case for current process of non-default instance
     }
 }

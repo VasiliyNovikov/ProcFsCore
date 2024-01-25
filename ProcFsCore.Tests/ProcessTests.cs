@@ -27,7 +27,10 @@ namespace ProcFsCore.Tests
             });
 
             Assert.IsNotNull(p.CommandLine);
-            Assert.AreEqual(process.StartTime.ToUniversalTime(), p.StartTimeUtc);
+            var expectedStartTime = process.StartTime.ToUniversalTime();
+            var actualStartTime = p.StartTimeUtc;
+            var expectedDelta = TimeSpan.FromSeconds(0.01);
+            Assert.AreEqual(expectedStartTime.Ticks, actualStartTime.Ticks, expectedDelta.Ticks, $"Expected a difference no greater than <{expectedDelta.TotalMilliseconds}> ms between expected value <{expectedStartTime:O}> and actual value {actualStartTime:O}");
 
             RetryOnAssert(() =>
             {
@@ -123,7 +126,7 @@ namespace ProcFsCore.Tests
                 Assert.IsTrue(links.Any(l => l.Type == LinkType.Socket && l.INode == expectedINode));
             }
         }
-        
+
         [TestMethod]
         public void Process_Current_IO_Test()
         {

@@ -2,9 +2,11 @@ using System;
 
 namespace ProcFsCore
 {
-    public readonly struct LightFileStream(string path, LightFileStreamAccess mode) : IDisposable
+    public readonly struct LightFileStream : IDisposable
     {
-        private readonly int _descriptor = Native.Open(path, (int)mode);
+        private readonly int _descriptor;
+
+        private LightFileStream(string path, LightFileStreamAccess mode) => _descriptor = Native.Open(path, (int)mode);
 
         public void Dispose() => Native.Close(_descriptor);
 

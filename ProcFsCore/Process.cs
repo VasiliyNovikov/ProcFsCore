@@ -199,7 +199,7 @@ namespace ProcFsCore
         {
             get
             {
-                _startTimeUtc ??= _instance.BootTimeUtc + TimeSpan.FromSeconds(StartTimeTicks / (double) ProcFs.TicksPerSecond);
+                _startTimeUtc ??= _instance.BootTimeUtc + TimeSpan.FromSeconds(StartTimeTicks / (double) Native.TicksPerSecond);
                 return _startTimeUtc.Value;
             }
         }
@@ -283,10 +283,10 @@ namespace ProcFsCore
                 statReader.SkipWord();
 
                 // (14) utime
-                _userProcessorTime = statReader.ReadInt64() / (double) ProcFs.TicksPerSecond;
+                _userProcessorTime = statReader.ReadInt64() / (double) Native.TicksPerSecond;
 
                 // (15) stime
-                _kernelProcessorTime = statReader.ReadInt64() / (double) ProcFs.TicksPerSecond;
+                _kernelProcessorTime = statReader.ReadInt64() / (double) Native.TicksPerSecond;
 
                 // (16) cutime
                 statReader.SkipWord();

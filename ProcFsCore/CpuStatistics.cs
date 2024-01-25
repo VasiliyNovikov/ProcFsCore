@@ -37,7 +37,7 @@ namespace ProcFsCore
                         cpuNumber = num;
                     }
 
-                    var ticksPerSecond = (double)ProcFs.TicksPerSecond;
+                    var ticksPerSecond = (double)Native.TicksPerSecond;
                     var userTime = statReader.ReadInt64() / ticksPerSecond;
                     var niceTime = statReader.ReadInt64() / ticksPerSecond;
                     var kernelTime = statReader.ReadInt64() / ticksPerSecond;

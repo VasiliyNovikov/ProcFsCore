@@ -30,7 +30,7 @@ namespace ProcFsCore.Tests
             var sw = new Stopwatch();
             sw.Start();
             var stats = ProcFs.Default.Cpu.Statistics().ToList();
-            var cpuTimeError = sw.Elapsed.TotalSeconds * Environment.ProcessorCount + 2.0 / ProcFs.TicksPerSecond;
+            var cpuTimeError = sw.Elapsed.TotalSeconds * Environment.ProcessorCount + 2.0 / Native.TicksPerSecond;
                 
             var wholeStat = stats[0];
             var totalUserTime = 0.0;

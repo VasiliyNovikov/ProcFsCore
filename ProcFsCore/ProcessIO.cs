@@ -41,11 +41,18 @@ namespace ProcFsCore
             }
         }
 
-        public readonly struct Direction(long characters, long bytes, long sysCalls)
+        public readonly struct Direction
         {
-            public long Characters { get; } = characters;
-            public long Bytes { get; } = bytes;
-            public long SysCalls { get; } = sysCalls;
+            public long Characters { get; }
+            public long Bytes { get; }
+            public long SysCalls { get; }
+
+            public Direction(long characters, long bytes, long sysCalls)
+            {
+                Characters = characters;
+                Bytes = bytes;
+                SysCalls = sysCalls;
+            }
         }
     }
 }

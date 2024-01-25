@@ -67,6 +67,6 @@ namespace ProcFsCore
 
         public override string ToString() => ((IPAddress)this).ToString();
 
-        public static implicit operator IPAddress(in NetAddress address) => new IPAddress(address.Data);
+        public static implicit operator IPAddress(in NetAddress address) => new(address.Data);
     }
 }
