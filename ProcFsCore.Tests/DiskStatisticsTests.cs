@@ -9,7 +9,7 @@ namespace ProcFsCore.Tests
         public void DiskStatistics_All_Test()
         {
             var hasTotalTime = false;
-            foreach (var stat in ProcFs.Disk.Statistics())
+            foreach (var stat in ProcFs.Default.Disk.Statistics())
             {
                 Assert.IsNotNull(stat.DeviceName);
                 if (stat.DeviceName == "md0" ||

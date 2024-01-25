@@ -1,26 +1,31 @@
 using System;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace ProcFsCore
 {
     public static class Native
     {
-        [DllImport("libc", EntryPoint = "getpid")]
+        private const string LibC = "libc.so.6";
+
+        public static readonly int TicksPerSecond = SystemConfig(SystemConfigName.TicksPerSecond);
+        public static readonly int PageSize = SystemConfig(SystemConfigName.PageSize);
+
+        [DllImport(LibC, EntryPoint = "getpid")]
         public static extern int GetPid();
 
-        [DllImport("libc", EntryPoint = "sysconf", SetLastError = true)]
-        public static extern int SystemConfig(SystemConfigName name);
+        [DllImport(LibC, EntryPoint = "sysconf", SetLastError = true)]
+        private static extern int SystemConfig(SystemConfigName name);
 
-        public enum SystemConfigName
+        private enum SystemConfigName
         {
             PageSize = 1,
             TicksPerSecond = 2
         }
 
-        [DllImport("libc", EntryPoint = "readlink", SetLastError = true)]
+        [DllImport(LibC, EntryPoint = "readlink", SetLastError = true)]
         private static extern unsafe IntPtr ReadLink(string path, void* buffer, IntPtr bufferSize);
-
         public static unsafe Buffer<byte> ReadLink(string path)
         {
             var buffer = new Buffer<byte>(256);
@@ -44,7 +49,7 @@ namespace ProcFsCore
             }
         }
 
-        [DllImport("libc", EntryPoint = "open", SetLastError = true)]
+        [DllImport(LibC, EntryPoint = "open", SetLastError = true)]
         private static extern int OpenRaw(string path, int flags);
         public static int Open(string path, int flags)
         {
@@ -53,8 +58,8 @@ namespace ProcFsCore
                 throw new Win32Exception();
             return descriptor;
         }
-        
-        [DllImport("libc", EntryPoint = "close", SetLastError = true)]
+
+        [DllImport(LibC, EntryPoint = "close", SetLastError = true)]
         private static extern int CloseRaw(int descriptor);
         public static void Close(int descriptor)
         {
@@ -62,8 +67,7 @@ namespace ProcFsCore
                 throw new Win32Exception();  
         }
         
-        
-        [DllImport("libc", EntryPoint = "read", SetLastError = true)]
+        [DllImport(LibC, EntryPoint = "read", SetLastError = true)]
         private static extern unsafe IntPtr Read(int descriptor, void* buffer, IntPtr bufferSize);
         public static unsafe int Read(int descriptor, Span<byte> buffer)
         {
@@ -75,8 +79,8 @@ namespace ProcFsCore
                 return bytesRead;
             }
         }
-        
-        [DllImport("libc", EntryPoint = "write", SetLastError = true)]
+
+        [DllImport(LibC, EntryPoint = "write", SetLastError = true)]
         private static extern unsafe IntPtr Write(int descriptor, void* buffer, IntPtr bufferSize);
         public static unsafe int Write(int descriptor, ReadOnlySpan<byte> buffer)
         {
@@ -87,6 +91,29 @@ namespace ProcFsCore
                     throw new Win32Exception();
                 return bytesWritten;
             }
+        }
+
+        [DllImport(LibC, EntryPoint = "clock_gettime", SetLastError = true)]
+        private static extern int ClockGetTimeRaw(ClockId clockId, out TimeSpec timeSpec);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long ClockGetTimeNanoseconds(ClockId clockId)
+        {
+            if (ClockGetTimeRaw(clockId, out var timeSpec) == -1)
+                throw new Win32Exception();
+            return timeSpec.Seconds * 1_000_000_000 + timeSpec.Nanoseconds;
+        }
+
+        public enum ClockId
+        {
+            RealTime = 0,
+            BootTime = 7
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private readonly struct TimeSpec
+        {
+            public readonly long Seconds;
+            public readonly long Nanoseconds;
         }
     }
 }

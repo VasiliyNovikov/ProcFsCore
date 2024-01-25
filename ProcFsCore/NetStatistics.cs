@@ -1,19 +1,27 @@
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 
 namespace ProcFsCore
 {
     public readonly struct NetStatistics
     {
-        private const string NetDevRelativePath = "/net/dev";
-        private const string NetDevPath = ProcFs.RootPath + NetDevRelativePath;
+        private const string NetDevRelativePath = "net/dev";
+        private static readonly ReadOnlyMemory<byte> InterfaceNameSeparators = ": ".ToUtf8();
 
-        private static readonly int ReceiveColumnCount;
+        public string InterfaceName { get; }
+        public readonly Direction Receive;
+        public readonly Direction Transmit;
 
-        static NetStatistics()
+        private NetStatistics(string interfaceName, in Direction receive, in Direction transmit)
         {
-            var statReader = new Utf8FileReader(NetDevPath, 512);
+            InterfaceName = interfaceName;
+            Receive = receive;
+            Transmit = transmit;
+        }
+
+        internal static int GetReceiveColumnCount(ProcFs instance)
+        {
+            var statReader = new Utf8FileReader(instance.PathFor(NetDevRelativePath), 512);
             try
             {
                 statReader.SkipLine();
@@ -31,32 +39,19 @@ namespace ProcFsCore
                     }
                     ++receiveColumnCount;
                 }
-                ReceiveColumnCount = receiveColumnCount;
+                return receiveColumnCount;
             }
             finally
             {
                 statReader.Dispose();   
             }
         }
-        
-        public string InterfaceName { get; }
-        public readonly Direction Receive;
-        public readonly Direction Transmit;
 
-        private NetStatistics(string interfaceName, in Direction receive, in Direction transmit)
-        {
-            InterfaceName = interfaceName;
-            Receive = receive;
-            Transmit = transmit;
-        }
+        internal static IEnumerable<NetStatistics> GetAll(ProcFs instance, int receiveColumnCount) => GetAll(instance.PathFor(NetDevRelativePath), receiveColumnCount);
 
-        private static readonly ReadOnlyMemory<byte> InterfaceNameSeparators = ": ".ToUtf8();
+        internal static IEnumerable<NetStatistics> Get(ProcFs instance, int pid, int receiveColumnCount) => GetAll(instance.PathFor($"{pid}/{NetDevRelativePath}"), receiveColumnCount);
 
-        internal static IEnumerable<NetStatistics> GetAll() => GetAll(NetDevPath);
-
-        internal static IEnumerable<NetStatistics> Get(int pid) => GetAll($"{ProcFs.RootPath}/{pid}{NetDevRelativePath}");
-
-        private static IEnumerable<NetStatistics> GetAll(string path)
+        private static IEnumerable<NetStatistics> GetAll(string path, int receiveColumnCount)
         {
             var statReader = new Utf8FileReader(path, 2048);
             try
@@ -70,7 +65,7 @@ namespace ProcFsCore
 
                     var receive = Direction.Parse(ref statReader);
 
-                    for (var i = 0; i < ReceiveColumnCount - 4; ++i)
+                    for (var i = 0; i < receiveColumnCount - 4; ++i)
                         statReader.SkipWord();
 
                     var transmit = Direction.Parse(ref statReader);

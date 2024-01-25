@@ -10,14 +10,15 @@ namespace ProcFsCore.Tests
         [TestMethod]
         public void NetArpEntry_Get_Test()
         {
-            var entries = ProcFs.Net.Arp().ToList();
+            var entries = ProcFs.Default.Net.Arp().ToList();
             Assert.IsTrue(entries.Count > 0);
         }
 
         [TestMethod]
         public void NetArpEntry_Parse_Test()
         {
-            var entries = NetArpEntry.Get(GetTestProcFsFile("/proc/net/arp")).ToList();
+            var testProcFs = TestProcFs();
+            var entries = testProcFs.Net.Arp().ToList();
             Assert.AreEqual(5, entries.Count);
 
             static void VerifyEntry(in NetArpEntry entry, string address, string hardwareAddress, string device)
@@ -27,7 +28,7 @@ namespace ProcFsCore.Tests
                 Assert.AreEqual("*", entry.Mask);
                 Assert.AreEqual(device, entry.Device);
             }
-            
+
             VerifyEntry(entries[0], "10.164.164.4", "4c:77:6d:ab:7a:bf", "br1");
             VerifyEntry(entries[1], "10.164.164.14", "a8:0c:0d:1e:56:0b", "br1");
             VerifyEntry(entries[2], "10.10.144.66", "f2:00:00:00:20:00", "br0");

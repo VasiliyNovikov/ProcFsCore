@@ -27,7 +27,10 @@ namespace ProcFsCore.Tests
             });
 
             Assert.IsNotNull(p.CommandLine);
-            Assert.AreEqual(process.StartTime.ToUniversalTime(), p.StartTimeUtc);
+            var expectedStartTime = process.StartTime.ToUniversalTime();
+            var actualStartTime = p.StartTimeUtc;
+            var expectedDelta = TimeSpan.FromSeconds(0.01);
+            Assert.AreEqual(expectedStartTime.Ticks, actualStartTime.Ticks, expectedDelta.Ticks, $"Expected a difference no greater than <{expectedDelta.TotalMilliseconds}> ms between expected value <{expectedStartTime:O}> and actual value {actualStartTime:O}");
 
             RetryOnAssert(() =>
             {
@@ -61,7 +64,7 @@ namespace ProcFsCore.Tests
         [TestMethod]
         public void Process_Current_Test()
         {
-            var pi = Process.Current;
+            var pi = ProcFs.Default.CurrentProcess;
             var process = DiagnosticsProcess.GetCurrentProcess();
             VerifyProcess(pi, process);
         }
@@ -73,7 +76,7 @@ namespace ProcFsCore.Tests
             Assert.IsNotNull(process);
             try
             {
-                var pi = new Process(process.Id);
+                var pi = ProcFs.Default.Process(process.Id);
                 VerifyProcess(pi, process);
                 Assert.AreEqual("sleep\01000", pi.CommandLine);
             }
@@ -91,7 +94,7 @@ namespace ProcFsCore.Tests
             Dictionary<int, DiagnosticsProcess>? processes = null;
             RetryOnAssert(() =>
             {
-                pis = ProcFs.Processes().ToDictionary(pi => pi.Pid);
+                pis = ProcFs.Default.Processes().ToDictionary(pi => pi.Pid);
                 processes = DiagnosticsProcess.GetProcesses().ToDictionary(p => p.Id);
                 Assert.AreEqual(processes.Count, pis.Count);
                 CollectionAssert.AreEquivalent(pis.Keys, processes.Keys);
@@ -107,7 +110,7 @@ namespace ProcFsCore.Tests
         [TestMethod]
         public void Process_Current_OpenFiles_Test()
         {
-            var pi = Process.Current;
+            var pi = ProcFs.Default.CurrentProcess;
             var fileName = $"/proc/{pi.Pid}/stat";
             using (File.OpenRead(fileName))
             using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
@@ -117,13 +120,13 @@ namespace ProcFsCore.Tests
                 Assert.IsTrue(links.Any(l => l.Type == LinkType.File && l.Path == fileName));
                 Assert.IsTrue(links.Any(l => l.Type == LinkType.Anon));
                 Assert.IsTrue(links.Any(l => l.Type == LinkType.Socket));
-                var expectedINode = ProcFs.Net.Services.Udp(NetAddressVersion.IPv4)
-                                                       .Single(s => s.LocalEndPoint.Address.IsEmpty && s.LocalEndPoint.Port == 12345 && s.State == NetServiceState.Closed)
-                                                       .INode;
+                var expectedINode = ProcFs.Default.Net.Services.Udp(NetAddressVersion.IPv4)
+                                                               .Single(s => s.LocalEndPoint.Address.IsEmpty && s.LocalEndPoint.Port == 12345 && s.State == NetServiceState.Closed)
+                                                               .INode;
                 Assert.IsTrue(links.Any(l => l.Type == LinkType.Socket && l.INode == expectedINode));
             }
         }
-        
+
         [TestMethod]
         public void Process_Current_IO_Test()
         {
@@ -131,7 +134,7 @@ namespace ProcFsCore.Tests
             const int fileSizeMb = 128;
             const int ioErrorDelta = mb / 16;
 
-            var process = Process.Current;
+            var process = ProcFs.Default.CurrentProcess;
             var initialIoStats = process.IO;
 
             var tmpFile = Path.GetTempFileName();

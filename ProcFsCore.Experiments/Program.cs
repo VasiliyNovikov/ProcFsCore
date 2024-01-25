@@ -7,17 +7,17 @@ namespace ProcFsCore.Experiments
     {
         private static void Main()
         {
-            foreach (var proc in ProcFs.Processes())
+            foreach (var proc in ProcFs.Default.Processes())
                 Console.WriteLine($"{proc.Pid} {proc.Name} {proc.CommandLine}");
             
             Console.WriteLine();
 
-            foreach (var file in new Process(1).OpenFiles)
+            foreach (var file in ProcFs.Default.Process(1).OpenFiles)
                 Console.WriteLine(file);
             
             Console.WriteLine();
             
-            foreach (var svc in ProcFs.Net.Services.Unix().Where(svc => svc.State == NetServiceState.Established))
+            foreach (var svc in ProcFs.Default.Net.Services.Unix().Where(svc => svc.State == NetServiceState.Established))
                 Console.WriteLine(svc);
         }
     }

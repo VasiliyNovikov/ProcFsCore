@@ -10,7 +10,6 @@ namespace ProcFsCore
         public NetEndPoint RemoteEndPoint { get; }
         public string? Path { get; }
         public NetServiceState State { get; }
-        // ReSharper disable once InconsistentNaming
         public int INode { get; }
 
         private NetService(NetServiceType type, in NetEndPoint localEndPoint, in NetEndPoint remoteEndPoint, string? path, NetServiceState state, int iNode)
@@ -29,20 +28,20 @@ namespace ProcFsCore
             builder.Append(Type);
             if (Type == NetServiceType.Unix)
             {
-                builder.Append(" ");
+                builder.Append(' ');
                 builder.Append(Path);
             }
             else
             {
                 if (!LocalEndPoint.IsEmpty)
                 {
-                    builder.Append(" ");
+                    builder.Append(' ');
                     builder.Append(LocalEndPoint);
                 }
 
                 if (!RemoteEndPoint.IsEmpty)
                 {
-                    builder.Append(" ");
+                    builder.Append(' ');
                     builder.Append(RemoteEndPoint);
                 }
             }
@@ -51,20 +50,18 @@ namespace ProcFsCore
             return builder.ToString();
         }
 
-#nullable disable
         private static readonly string[,] NetServiceFiles = 
         {
-            { ProcFs.RootPath + "/net/tcp", ProcFs.RootPath + "/net/tcp6" },
-            { ProcFs.RootPath + "/net/udp", ProcFs.RootPath + "/net/udp6" },
-            { ProcFs.RootPath + "/net/raw", ProcFs.RootPath + "/net/raw6" },
-            { ProcFs.RootPath + "/net/unix", null }
+            { "net/tcp", "net/tcp6" },
+            { "net/udp", "net/udp6" },
+            { "net/raw", "net/raw6" },
+            { "net/unix", null! }
         };
-#nullable restore
 
-        private static IEnumerable<NetService> Get(NetServiceType type, NetAddressVersion? addressVersion)
+        private static IEnumerable<NetService> GetAll(ProcFs instance, NetServiceType type, NetAddressVersion? addressVersion)
         {
             var serviceFile = NetServiceFiles[(int) type, (addressVersion ?? NetAddressVersion.IPv4) == NetAddressVersion.IPv4 ? 0 : 1];
-            var statReader = new Utf8FileReader(serviceFile, 256);
+            var statReader = new Utf8FileReader(instance.PathFor(serviceFile), 256);
             try
             {
                 statReader.SkipLine();
@@ -111,12 +108,12 @@ namespace ProcFsCore
             }
         }
 
-        internal static IEnumerable<NetService> GetTcp(NetAddressVersion addressVersion) => Get(NetServiceType.Tcp, addressVersion);
+        internal static IEnumerable<NetService> GetTcp(ProcFs instance, NetAddressVersion addressVersion) => GetAll(instance, NetServiceType.Tcp, addressVersion);
 
-        internal static IEnumerable<NetService> GetUdp(NetAddressVersion addressVersion) => Get(NetServiceType.Udp, addressVersion);
+        internal static IEnumerable<NetService> GetUdp(ProcFs instance, NetAddressVersion addressVersion) => GetAll(instance, NetServiceType.Udp, addressVersion);
 
-        internal static IEnumerable<NetService> GetRaw(NetAddressVersion addressVersion) => Get(NetServiceType.Raw, addressVersion);
+        internal static IEnumerable<NetService> GetRaw(ProcFs instance, NetAddressVersion addressVersion) => GetAll(instance, NetServiceType.Raw, addressVersion);
 
-        internal static IEnumerable<NetService> GetUnix() => Get(NetServiceType.Unix, null);
+        internal static IEnumerable<NetService> GetUnix(ProcFs instance) => GetAll(instance, NetServiceType.Unix, null);
     }
 }

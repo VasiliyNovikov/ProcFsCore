@@ -16,7 +16,7 @@ namespace ProcFsCore
         private Span<byte> Data => MemoryMarshal.CreateSpan(ref _data[0], _length);
 
         public NetAddressVersion Version => _length == 4 ? NetAddressVersion.IPv4 : NetAddressVersion.IPv6;
-        
+
         public bool IsEmpty
         {
             get
@@ -28,13 +28,13 @@ namespace ProcFsCore
             }
         }
 
-        public NetAddress(ReadOnlySpan<byte> address)
+        private NetAddress(ReadOnlySpan<byte> address)
         {
             _length = address.Length;
             address.CopyTo(Data);    
         }
 
-        public static NetAddress Parse(ReadOnlySpan<byte> addressString, NetAddressFormat format)
+        internal static NetAddress Parse(ReadOnlySpan<byte> addressString, NetAddressFormat format)
         {
             switch (format)
             {
@@ -64,9 +64,9 @@ namespace ProcFsCore
                     throw new ArgumentOutOfRangeException(nameof(format), format, null);
             }
         }
-        
+
         public override string ToString() => ((IPAddress)this).ToString();
 
-        public static implicit operator IPAddress(in NetAddress address) => new IPAddress(address.Data);
+        public static implicit operator IPAddress(in NetAddress address) => new(address.Data);
     }
 }

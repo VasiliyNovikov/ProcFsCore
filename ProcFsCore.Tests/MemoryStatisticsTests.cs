@@ -8,7 +8,7 @@ namespace ProcFsCore.Tests
         [TestMethod]
         public void MemoryStatistics_Test()
         {
-            var stats = ProcFs.Memory.Statistics();
+            var stats = ProcFs.Default.Memory.Statistics();
             Assert.IsTrue(stats.Total > 0, "Total > 0");
             Assert.IsTrue(stats.Available > 0, "Available > 0");
             Assert.IsTrue(stats.Free > 0, "Free > 0");

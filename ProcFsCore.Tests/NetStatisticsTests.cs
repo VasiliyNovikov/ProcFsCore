@@ -34,9 +34,9 @@ namespace ProcFsCore.Tests
         }
 
         [TestMethod]
-        public void NetStatistics_All_Test() => NetStatistics_All_Test(ProcFs.Net.Statistics);
+        public void NetStatistics_All_Test() => NetStatistics_All_Test(ProcFs.Default.Net.Statistics);
 
         [TestMethod]
-        public void NetStatistics_All_For_Process_Test() => NetStatistics_All_Test(() => Process.Current.Net.Statistics);
+        public void NetStatistics_All_For_Process_Test() => NetStatistics_All_Test(() => ProcFs.Default.CurrentProcess.Net.Statistics);
     }
 }
