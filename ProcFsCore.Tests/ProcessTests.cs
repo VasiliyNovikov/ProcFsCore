@@ -121,8 +121,8 @@ namespace ProcFsCore.Tests
                 Assert.IsTrue(links.Any(l => l.Type == LinkType.Anon));
                 Assert.IsTrue(links.Any(l => l.Type == LinkType.Socket));
                 var expectedINode = ProcFs.Default.Net.Services.Udp(NetAddressVersion.IPv4)
-                                                                  .Single(s => s.LocalEndPoint.Address.IsEmpty && s.LocalEndPoint.Port == 12345 && s.State == NetServiceState.Closed)
-                                                                  .INode;
+                                                               .Single(s => s.LocalEndPoint.Address.IsEmpty && s.LocalEndPoint.Port == 12345 && s.State == NetServiceState.Closed)
+                                                               .INode;
                 Assert.IsTrue(links.Any(l => l.Type == LinkType.Socket && l.INode == expectedINode));
             }
         }

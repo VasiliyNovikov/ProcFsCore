@@ -72,9 +72,9 @@ namespace ProcFsCore.Tests
             RetryOnAssert(() =>
             {
                 var services = ProcFs.Default.Net.Services.Tcp(NetAddressVersion.IPv4)
-                                                  .Concat(ProcFs.Default.Net.Services.Tcp(NetAddressVersion.IPv6))
-                                                  .Where(s => s.State != NetServiceState.Listen)
-                                                  .ToArray();
+                                                          .Concat(ProcFs.Default.Net.Services.Tcp(NetAddressVersion.IPv6))
+                                                          .Where(s => s.State != NetServiceState.Listen)
+                                                          .ToArray();
                 var expectedServices = IPGlobalProperties.GetIPGlobalProperties()
                                                          .GetActiveTcpConnections()
                                                          .ToArray();
@@ -96,9 +96,9 @@ namespace ProcFsCore.Tests
             RetryOnAssert(() =>
             {
                 var services = ProcFs.Default.Net.Services.Tcp(NetAddressVersion.IPv4)
-                                                                     .Concat(ProcFs.Default.Net.Services.Tcp(NetAddressVersion.IPv6))
-                                                                     .Where(s => s.State == NetServiceState.Listen)
-                                                                     .ToArray();
+                                                          .Concat(ProcFs.Default.Net.Services.Tcp(NetAddressVersion.IPv6))
+                                                          .Where(s => s.State == NetServiceState.Listen)
+                                                          .ToArray();
                 var expectedServices = IPGlobalProperties.GetIPGlobalProperties()
                                                          .GetActiveTcpListeners();
                 Assert.AreEqual(expectedServices.Length, services.Length);
