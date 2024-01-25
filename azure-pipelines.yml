@@ -8,8 +8,6 @@ stages:
   - job: Build
     strategy:
       matrix:
-        Ubuntu_18:
-          imageName: ubuntu-18.04
         Ubuntu_20:
           imageName: ubuntu-20.04
         Ubuntu_22:
