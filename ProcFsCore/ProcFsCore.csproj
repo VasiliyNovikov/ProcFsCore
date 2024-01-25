@@ -4,8 +4,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Version>0.2.0</Version>
+    <PackageVersion>$(Version)$(VersionSuffix)</PackageVersion>
     <Authors>Vasiliy Novikov</Authors>
-    <Description>Lightweight .NET Core procfs wrapper</Description>
+    <Description>Lightweight .NET procfs wrapper</Description>
     <PackageTags>linux;procfs</PackageTags>
     <PackageProjectUrl>https://github.com/VasiliyNovikov/ProcFsCore</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
