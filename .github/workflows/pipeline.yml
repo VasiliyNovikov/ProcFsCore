@@ -10,35 +10,16 @@ jobs:
   validate:
     strategy:
       matrix:
-        include:
-          - name: Linux-U18
-            os: ubuntu-latest
-            container: ubuntu:18.04
-          - name: Linux-U20
-            os: ubuntu-20.04
-          - name: Linux-U22
-            os: ubuntu-22.04
-          - name: Linux-U24
-            os: ubuntu-24.04
+        os:
+          - ubuntu-20.04
+          - ubuntu-22.04
+          - ubuntu-24.04
     runs-on: ${{ matrix.os }}
-    container: ${{ matrix.container }}
-    env:
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
     steps:
-      - name: Install Dependencies
-        run: |
-          set -e
-          apt update && apt upgrade -y
-          apt install -y curl libicu-dev git
-          curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
-          apt install -y nodejs
-          node -v && npm -v
-        if: matrix.name == 'Linux-U18'
-
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
             6.0.x
@@ -52,7 +33,7 @@ jobs:
         run: dotnet test -c ${{ vars.CONFIGURATION }} --no-build --logger trx --results-directory "TestResults-${{ matrix.os }}"
 
       - name: Upload Test Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.os }}
           path: TestResults-${{ matrix.os }}
