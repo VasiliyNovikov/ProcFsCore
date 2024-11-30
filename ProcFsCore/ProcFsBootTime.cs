@@ -47,7 +47,7 @@ public class ProcFsBootTime
                 throw new NotSupportedException();
 
             var bootTimeSeconds = statReader.ReadInt64();
-            return DateTime.UnixEpoch + TimeSpan.FromSeconds(bootTimeSeconds);
+            return CrossPlatformDateTime.UnixEpoch + TimeSpan.FromSeconds(bootTimeSeconds);
         }
         finally
         {
@@ -65,7 +65,7 @@ public class ProcFsBootTime
             bootTimeNanosecondsSinceEpochSum += ComputeOnce();
 
         var bootTimeNanosecondsSinceEpoch = bootTimeNanosecondsSinceEpochSum / iterations;
-        return DateTime.UnixEpoch + TimeSpan.FromTicks(bootTimeNanosecondsSinceEpoch / NanosecondsPerTick);
+        return CrossPlatformDateTime.UnixEpoch + TimeSpan.FromTicks(bootTimeNanosecondsSinceEpoch / NanosecondsPerTick);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static long ComputeOnce()

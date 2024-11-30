@@ -1,10 +1,9 @@
-namespace ProcFsCore
+namespace ProcFsCore;
+
+public enum NetServiceType
 {
-    public enum NetServiceType
-    {
-        Tcp,
-        Udp,
-        Raw,
-        Unix
-    }
+    Tcp,
+    Udp,
+    Raw,
+    Unix
 }

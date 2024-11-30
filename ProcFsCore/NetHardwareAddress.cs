@@ -1,52 +1,57 @@
 using System;
 using System.Buffers.Text;
+using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace ProcFsCore
+namespace ProcFsCore;
+
+public unsafe struct NetHardwareAddress
 {
-    public unsafe struct NetHardwareAddress
-    {
-        private const int Length = 6;
+    private const int Length = 6;
         
 #pragma warning disable 649
-        private fixed byte _data[Length];
+    private fixed byte _data[Length];
 #pragma warning restore 649
         
-        private Span<byte> Data => MemoryMarshal.CreateSpan(ref _data[0], Length);
+    private Span<byte> Data => CrossPlatformMemoryMarshal.CreateSpan(ref _data[0], Length);
+
+    public NetHardwareAddress(ReadOnlySpan<byte> address)
+    {
+        address.CopyTo(Data);    
+    }
         
-        public NetHardwareAddress(ReadOnlySpan<byte> address)
+    [SkipLocalsInit]
+    public static NetHardwareAddress Parse(ReadOnlySpan<byte> address)
+    {
+        Span<byte> addressBytes = stackalloc byte[Length];
+        for (var i = 0; i < Length; ++i)
         {
-            address.CopyTo(Data);    
-        }
-        
-        public static NetHardwareAddress Parse(ReadOnlySpan<byte> address)
-        {
-            Span<byte> addressBytes = stackalloc byte[Length];
-            for (var i = 0; i < Length; ++i)
-            {
-                var hexPart = address.Slice(i * 3, 2);
-                Utf8Parser.TryParse(hexPart, out byte addressPart, out _, 'x');
-                addressBytes[i] = addressPart;
-            }
-
-            return new NetHardwareAddress(addressBytes);
+            var hexPart = address.Slice(i * 3, 2);
+#pragma warning disable CA1806
+            Utf8Parser.TryParse(hexPart, out byte addressPart, out _, 'x');
+#pragma warning restore CA1806
+            addressBytes[i] = addressPart;
         }
 
-        private static readonly string[] ByteHexes = Enumerable.Range(0, 256).Select(b => b.ToString("x2")).ToArray();
+        return new NetHardwareAddress(addressBytes);
+    }
 
-        public override string ToString()
+    private static readonly string[] ByteHexes = Enumerable.Range(0, 256).Select(b => b.ToString("x2", CultureInfo.InvariantCulture)).ToArray();
+
+    [SkipLocalsInit]
+    public override string ToString()
+    {
+        Span<char> addressStr = stackalloc char[Length * 3 - 1];
+        for (var i = 0; i < Data.Length; ++i)
         {
-            Span<char> addressStr = stackalloc char[Length * 3 - 1];
-            for (var i = 0; i < Data.Length; ++i)
-            {
-                if (i > 0)
-                    addressStr[i * 3 - 1] = ':';
-                ReadOnlySpan<char> hex = ByteHexes[Data[i]];
-                hex.CopyTo(addressStr.Slice(i * 3, 2));
-            }
-
-            return new String(addressStr);
+            if (i > 0)
+                addressStr[i * 3 - 1] = ':';
+            var hex = ByteHexes[Data[i]].AsSpan();
+            hex.CopyTo(addressStr.Slice(i * 3, 2));
         }
+
+        return addressStr.ToString();
     }
 }

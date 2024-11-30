@@ -1,15 +1,14 @@
 ﻿using BenchmarkDotNet.Running;
 
-namespace ProcFsCore.Benchmarks
+namespace ProcFsCore.Benchmarks;
+
+internal static class Program
 {
-    internal static class Program
+    private static void Main()
     {
-        private static void Main()
-        {
-            //BenchmarkRunner.Run<ProcessAllBenchmarks>();
-            //BenchmarkRunner.Run<NetStatisticsAllBenchmarks>();
-            //BenchmarkRunner.Run<FileStreamBenchmarks>();
-            BenchmarkRunner.Run<BufferBenchmarks>();
-        }
+        //BenchmarkRunner.Run<ProcessAllBenchmarks>();
+        //BenchmarkRunner.Run<NetStatisticsAllBenchmarks>();
+        //BenchmarkRunner.Run<FileStreamBenchmarks>();
+        BenchmarkRunner.Run<BufferBenchmarks>();
     }
 }
