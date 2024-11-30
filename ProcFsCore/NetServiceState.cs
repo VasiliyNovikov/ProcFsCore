@@ -1,19 +1,18 @@
-namespace ProcFsCore
+namespace ProcFsCore;
+
+public enum NetServiceState
 {
-    public enum NetServiceState
-    {
-        Unknown,
-        Established,
-        SynSent,
-        SynReceived,
-        FinWait1,
-        FinWait2,
-        TimeWait,
-        Closed,
-        CloseWait,
-        LastAck,
-        Listen,
-        Closing,
-        NewSynReceived
-    }
+    Unknown,
+    Established,
+    SynSent,
+    SynReceived,
+    FinWait1,
+    FinWait2,
+    TimeWait,
+    Closed,
+    CloseWait,
+    LastAck,
+    Listen,
+    Closing,
+    NewSynReceived
 }

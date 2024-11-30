@@ -1,19 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="../ProcFsCore.targets" />
   <PropertyGroup>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <TargetFrameworks>$(TargetFrameworks);netstandard2.0</TargetFrameworks>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <PackageVersion>$(Version)$(VersionSuffix)</PackageVersion>
-    <Authors>Vasiliy Novikov</Authors>
+    <Authors>Vasyl Novikov</Authors>
     <Description>Lightweight .NET procfs wrapper</Description>
     <PackageTags>linux;procfs</PackageTags>
     <PackageProjectUrl>https://github.com/VasiliyNovikov/ProcFsCore</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Copyright>Vasiliy Novikov</Copyright>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Copyright>Vasyl Novikov</Copyright>
     <RepositoryUrl>https://github.com/VasiliyNovikov/ProcFsCore</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
   </PropertyGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Microsoft.Bcl.Memory" />
   </ItemGroup>
 </Project>

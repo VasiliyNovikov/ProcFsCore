@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
 
-namespace ProcFsCore
-{
-    public class ProcFsDisk
-    {
-        private readonly ProcFs _instance;
-        
-        internal ProcFsDisk(ProcFs instance) => _instance = instance;
+namespace ProcFsCore;
 
-        public IEnumerable<DiskStatistics> Statistics() => DiskStatistics.GetAll(_instance);
-    }
+public class ProcFsDisk
+{
+    private readonly ProcFs _instance;
+        
+    internal ProcFsDisk(ProcFs instance) => _instance = instance;
+
+    public IEnumerable<DiskStatistics> Statistics() => DiskStatistics.GetAll(_instance);
 }

@@ -2,362 +2,361 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace ProcFsCore
+namespace ProcFsCore;
+
+public struct Process
 {
-    public struct Process
+    private readonly ProcFs _instance;
+    private bool _initialized;
+
+    private int _pid;
+    public int Pid
     {
-        private readonly ProcFs _instance;
-        private bool _initialized;
-
-        private int _pid;
-        public int Pid
+        get
         {
-            get
-            {
-                if (_pid == 0)
-                    EnsureInitialized();
-                return _pid;
-            }
-        }
-
-        private string? _name;
-        public string Name
-        {
-            get
-            {
+            if (_pid == 0)
                 EnsureInitialized();
-                return _name!;
-            }
+            return _pid;
         }
+    }
 
-        private ProcessState _state;
-        public ProcessState State
+    private string? _name;
+    public string Name
+    {
+        get
         {
-            get
-            {
-                EnsureInitialized();
-                return _state;
-            }
+            EnsureInitialized();
+            return _name!;
         }
+    }
 
-        private int _parentPid;
-        public int ParentPid
+    private ProcessState _state;
+    public ProcessState State
+    {
+        get
         {
-            get
-            {
-                EnsureInitialized();
-                return _parentPid;
-            }
+            EnsureInitialized();
+            return _state;
         }
+    }
 
-        private int _groupId;
-        public int GroupId
+    private int _parentPid;
+    public int ParentPid
+    {
+        get
         {
-            get
-            {
-                EnsureInitialized();
-                return _groupId;
-            }
+            EnsureInitialized();
+            return _parentPid;
         }
+    }
 
-        private int _sessionId;
-        public int SessionId
+    private int _groupId;
+    public int GroupId
+    {
+        get
         {
-            get
-            {
-                EnsureInitialized();
-                return _sessionId;
-            }
+            EnsureInitialized();
+            return _groupId;
         }
+    }
 
-        private long _minorFaults;
-        public long MinorFaults
+    private int _sessionId;
+    public int SessionId
+    {
+        get
         {
-            get
-            {
-                EnsureInitialized();
-                return _minorFaults;
-            }
+            EnsureInitialized();
+            return _sessionId;
         }
+    }
 
-        private long _majorFaults;
-        public long MajorFaults
+    private long _minorFaults;
+    public long MinorFaults
+    {
+        get
         {
-            get
-            {
-                EnsureInitialized();
-                return _majorFaults;
-            }
+            EnsureInitialized();
+            return _minorFaults;
         }
+    }
 
-        private double _userProcessorTime;
-        public double UserProcessorTime
+    private long _majorFaults;
+    public long MajorFaults
+    {
+        get
         {
-            get
-            {
-                EnsureInitialized();
-                return _userProcessorTime;
-            }
+            EnsureInitialized();
+            return _majorFaults;
         }
+    }
 
-        private double _kernelProcessorTime;
-        public double KernelProcessorTime
+    private double _userProcessorTime;
+    public double UserProcessorTime
+    {
+        get
         {
-            get
-            {
-                EnsureInitialized();
-                return _kernelProcessorTime;
-            }
+            EnsureInitialized();
+            return _userProcessorTime;
         }
+    }
 
-        private short _priority;
-        public short Priority
+    private double _kernelProcessorTime;
+    public double KernelProcessorTime
+    {
+        get
         {
-            get
-            {
-                EnsureInitialized();
-                return _priority;
-            }
+            EnsureInitialized();
+            return _kernelProcessorTime;
         }
+    }
 
-        private short _nice;
-        public short Nice
+    private short _priority;
+    public short Priority
+    {
+        get
         {
-            get
-            {
-                EnsureInitialized();
-                return _nice;
-            }
+            EnsureInitialized();
+            return _priority;
         }
+    }
 
-        private int _threadCount;
-        public int ThreadCount
+    private short _nice;
+    public short Nice
+    {
+        get
         {
-            get
-            {
-                EnsureInitialized();
-                return _threadCount;
-            }
+            EnsureInitialized();
+            return _nice;
         }
+    }
 
-        private long _startTimeTicks;
-        public long StartTimeTicks
+    private int _threadCount;
+    public int ThreadCount
+    {
+        get
         {
-            get
-            {
-                EnsureInitialized();
-                return _startTimeTicks;
-            }
+            EnsureInitialized();
+            return _threadCount;
         }
+    }
 
-        private long _virtualMemorySize;
-        public long VirtualMemorySize
+    private long _startTimeTicks;
+    public long StartTimeTicks
+    {
+        get
         {
-            get
-            {
-                EnsureInitialized();
-                return _virtualMemorySize;
-            }
+            EnsureInitialized();
+            return _startTimeTicks;
         }
+    }
 
-        private long _residentSetSize;
-        public long ResidentSetSize
+    private long _virtualMemorySize;
+    public long VirtualMemorySize
+    {
+        get
         {
-            get
-            {
-                EnsureInitialized();
-                return _residentSetSize;
-            }
+            EnsureInitialized();
+            return _virtualMemorySize;
         }
+    }
 
-        private static readonly Func<char, bool> ZeroPredicate = ch => ch == '\0';
-        private string? _commandLine;
-        public string CommandLine
+    private long _residentSetSize;
+    public long ResidentSetSize
+    {
+        get
         {
-            get
+            EnsureInitialized();
+            return _residentSetSize;
+        }
+    }
+
+    private static readonly Func<char, bool> ZeroPredicate = ch => ch == '\0';
+    private string? _commandLine;
+    public string CommandLine
+    {
+        get
+        {
+            if (_commandLine == null)
             {
-                if (_commandLine == null)
+                try
                 {
-                    try
-                    {
-                        using var cmdLineBuffer = Buffer<byte>.FromFile(_instance.PathFor($"{Pid}/cmdline"), 256);
-                        var cmdLineSpan = cmdLineBuffer.Span.Trim(ZeroPredicate);
-                        _commandLine = cmdLineSpan.IsEmpty ? "" : cmdLineSpan.ToUtf8String();
-                    }
-                    catch (IOException)
-                    {
-                        _commandLine = "";
-                    }
+                    using var cmdLineBuffer = Buffer<byte>.FromFile(_instance.PathFor($"{Pid}/cmdline"), 256);
+                    var cmdLineSpan = cmdLineBuffer.Span.Trim(ZeroPredicate);
+                    _commandLine = cmdLineSpan.IsEmpty ? "" : cmdLineSpan.ToUtf8String();
                 }
-
-                return _commandLine;
+                catch (IOException)
+                {
+                    _commandLine = "";
+                }
             }
+
+            return _commandLine;
         }
+    }
         
-        private DateTime? _startTimeUtc;
-        public DateTime StartTimeUtc
+    private DateTime? _startTimeUtc;
+    public DateTime StartTimeUtc
+    {
+        get
         {
-            get
-            {
-                _startTimeUtc ??= _instance.BootTimeUtc + TimeSpan.FromSeconds(StartTimeTicks / (double) Native.TicksPerSecond);
-                return _startTimeUtc.Value;
-            }
+            _startTimeUtc ??= _instance.BootTimeUtc + TimeSpan.FromSeconds(StartTimeTicks / (double) Native.TicksPerSecond);
+            return _startTimeUtc.Value;
+        }
+    }
+
+    public IEnumerable<Link> OpenFiles
+    {
+        get
+        {
+            foreach (var linkFile in Directory.EnumerateFiles(_instance.PathFor($"{Pid}/fd")))
+                yield return Link.Read(linkFile);
+        }
+    }
+
+    public ProcessIO IO => ProcessIO.Get(_instance, Pid);
+
+    public ProcessNet Net => new(_instance, Pid);
+
+    internal Process(ProcFs instance, int pid)
+        : this()
+    {
+        _instance = instance;
+        _pid = pid;
+    }
+
+    private void EnsureInitialized()
+    {
+        if (!_initialized) 
+            Refresh();
+    }
+
+    public void Refresh()
+    {
+        _initialized = false;
+        _commandLine = null;
+        _startTimeUtc = null;
+        var statPath = _instance.PathFor(Pid == 0 ? "self/stat" : $"{Pid}/stat"); // 0 - special case for current process of non-default instance
+        var statReader = new Utf8FileReader(statPath, 512);
+        try
+        {
+            // See http://man7.org/linux/man-pages/man5/proc.5.html /proc/[pid]/stat section
+
+            // (1) pid
+            _pid = statReader.ReadInt32();
+
+            // (2) name
+            statReader.SkipSeparator('(');
+            _name = statReader.ReadFragment(')').ToUtf8String();
+            statReader.SkipWhiteSpaces();
+
+            // (3) state
+            _state = GetProcessState((char) statReader.ReadWord()[0]);
+
+            // (4) ppid
+            _parentPid = statReader.ReadInt32();
+
+            // (5) pgrp
+            _groupId = statReader.ReadInt32();
+
+            // (6) session
+            _sessionId = statReader.ReadInt32();
+
+            // (7) tty_nr
+            statReader.SkipWord();
+
+            // (8) tpgid
+            statReader.SkipWord();
+
+            // (9) flags
+            statReader.SkipWord();
+
+            // (10) minflt
+            _minorFaults = statReader.ReadInt64();
+
+            // (11) cminflt
+            statReader.SkipWord();
+
+            // (12) majflt
+            _majorFaults = statReader.ReadInt64();
+
+            // (13) cmajflt
+            statReader.SkipWord();
+
+            // (14) utime
+            _userProcessorTime = statReader.ReadInt64() / (double) Native.TicksPerSecond;
+
+            // (15) stime
+            _kernelProcessorTime = statReader.ReadInt64() / (double) Native.TicksPerSecond;
+
+            // (16) cutime
+            statReader.SkipWord();
+
+            // (17) cstime
+            statReader.SkipWord();
+
+            // (18) priority
+            _priority = statReader.ReadInt16();
+
+            // (19) nice
+            _nice = statReader.ReadInt16();
+
+            // (20) num_threads
+            _threadCount = statReader.ReadInt32();
+
+            // (21) itrealvalue
+            statReader.SkipWord();
+
+            // (22) starttime
+            _startTimeTicks = statReader.ReadInt64();
+
+            // (23) vsize
+            _virtualMemorySize = statReader.ReadInt64();
+
+            // (24) rss
+            _residentSetSize = statReader.ReadInt64() * Environment.SystemPageSize;
+        }
+        finally
+        {
+            statReader.Dispose();
         }
 
-        public IEnumerable<Link> OpenFiles
-        {
-            get
-            {
-                foreach (var linkFile in Directory.EnumerateFiles(_instance.PathFor($"{Pid}/fd")))
-                    yield return Link.Read(linkFile);
-            }
-        }
+        _initialized = true;
+    }
 
-        public ProcessIO IO => ProcessIO.Get(_instance, Pid);
-
-        public ProcessNet Net => new(_instance, Pid);
-
-        internal Process(ProcFs instance, int pid)
-            : this()
-        {
-            _instance = instance;
-            _pid = pid;
-        }
-
-        private void EnsureInitialized()
-        {
-            if (!_initialized) 
-                Refresh();
-        }
-
-        public void Refresh()
-        {
-            _initialized = false;
-            _commandLine = null;
-            _startTimeUtc = null;
-            var statPath = _instance.PathFor(Pid == 0 ? "self/stat" : $"{Pid}/stat"); // 0 - special case for current process of non-default instance
-            var statReader = new Utf8FileReader(statPath, 512);
-            try
-            {
-                // See http://man7.org/linux/man-pages/man5/proc.5.html /proc/[pid]/stat section
-
-                // (1) pid
-                _pid = statReader.ReadInt32();
-
-                // (2) name
-                statReader.SkipSeparator('(');
-                _name = statReader.ReadFragment(')').ToUtf8String();
-                statReader.SkipWhiteSpaces();
-
-                // (3) state
-                _state = GetProcessState((char) statReader.ReadWord()[0]);
-
-                // (4) ppid
-                _parentPid = statReader.ReadInt32();
-
-                // (5) pgrp
-                _groupId = statReader.ReadInt32();
-
-                // (6) session
-                _sessionId = statReader.ReadInt32();
-
-                // (7) tty_nr
-                statReader.SkipWord();
-
-                // (8) tpgid
-                statReader.SkipWord();
-
-                // (9) flags
-                statReader.SkipWord();
-
-                // (10) minflt
-                _minorFaults = statReader.ReadInt64();
-
-                // (11) cminflt
-                statReader.SkipWord();
-
-                // (12) majflt
-                _majorFaults = statReader.ReadInt64();
-
-                // (13) cmajflt
-                statReader.SkipWord();
-
-                // (14) utime
-                _userProcessorTime = statReader.ReadInt64() / (double) Native.TicksPerSecond;
-
-                // (15) stime
-                _kernelProcessorTime = statReader.ReadInt64() / (double) Native.TicksPerSecond;
-
-                // (16) cutime
-                statReader.SkipWord();
-
-                // (17) cstime
-                statReader.SkipWord();
-
-                // (18) priority
-                _priority = statReader.ReadInt16();
-
-                // (19) nice
-                _nice = statReader.ReadInt16();
-
-                // (20) num_threads
-                _threadCount = statReader.ReadInt32();
-
-                // (21) itrealvalue
-                statReader.SkipWord();
-
-                // (22) starttime
-                _startTimeTicks = statReader.ReadInt64();
-
-                // (23) vsize
-                _virtualMemorySize = statReader.ReadInt64();
-
-                // (24) rss
-                _residentSetSize = statReader.ReadInt64() * Environment.SystemPageSize;
-            }
-            finally
-            {
-                statReader.Dispose();
-            }
-
-            _initialized = true;
-        }
-
-        internal static IEnumerable<Process> GetAll(ProcFs instance)
-        {
-            foreach (var pidPath in Directory.EnumerateDirectories(instance.RootPath))
-                if (int.TryParse(Path.GetFileName(pidPath), out var pid))
-                    yield return new Process(instance, pid);
-        }
+    internal static IEnumerable<Process> GetAll(ProcFs instance)
+    {
+        foreach (var pidPath in Directory.EnumerateDirectories(instance.RootPath))
+            if (int.TryParse(Path.GetFileName(pidPath), out var pid))
+                yield return new Process(instance, pid);
+    }
         
-        private static ProcessState GetProcessState(char state)
+    private static ProcessState GetProcessState(char state)
+    {
+        switch (state)
         {
-            switch (state)
-            {
-                case 'R':
-                    return ProcessState.Running;
-                case 'S':
-                    return ProcessState.Sleeping;
-                case 'D':
-                    return ProcessState.Waiting;
-                case 'Z':
-                    return ProcessState.Zombie;
-                case 'T':
-                    return ProcessState.Stopped;
-                case 't':
-                    return ProcessState.TracingStop;
-                case 'x':
-                case 'X':
-                    return ProcessState.Dead;
-                case 'K':
-                    return ProcessState.WakeKill;
-                case 'W':
-                    return ProcessState.Waking;
-                case 'P':
-                    return ProcessState.Parked;
-                default:
-                    return ProcessState.Unknown;
-            }
+            case 'R':
+                return ProcessState.Running;
+            case 'S':
+                return ProcessState.Sleeping;
+            case 'D':
+                return ProcessState.Waiting;
+            case 'Z':
+                return ProcessState.Zombie;
+            case 'T':
+                return ProcessState.Stopped;
+            case 't':
+                return ProcessState.TracingStop;
+            case 'x':
+            case 'X':
+                return ProcessState.Dead;
+            case 'K':
+                return ProcessState.WakeKill;
+            case 'W':
+                return ProcessState.Waking;
+            case 'P':
+                return ProcessState.Parked;
+            default:
+                return ProcessState.Unknown;
         }
     }
 }

@@ -1,11 +1,10 @@
-﻿namespace ProcFsCore
+﻿namespace ProcFsCore;
+
+public class ProcFsMemory
 {
-    public class ProcFsMemory
-    {
-        private readonly ProcFs _instance;
+    private readonly ProcFs _instance;
         
-        internal ProcFsMemory(ProcFs instance) => _instance = instance;
+    internal ProcFsMemory(ProcFs instance) => _instance = instance;
         
-        public MemoryStatistics Statistics() => MemoryStatistics.Get(_instance);
-    }
+    public MemoryStatistics Statistics() => MemoryStatistics.Get(_instance);
 }

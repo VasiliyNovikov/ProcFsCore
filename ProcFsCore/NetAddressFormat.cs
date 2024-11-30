@@ -1,8 +1,7 @@
-namespace ProcFsCore
+namespace ProcFsCore;
+
+public enum NetAddressFormat
 {
-    public enum NetAddressFormat
-    {
-        Hex,
-        Human
-    }
+    Hex,
+    Human
 }
