@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>$(TargetFrameworks);net6.0</TargetFrameworks>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+    <TestTfmsInParallel>false</TestTfmsInParallel>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MSTest" />
