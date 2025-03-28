@@ -2,7 +2,7 @@
   <Import Project="../ProcFsCore.targets" />
   <PropertyGroup>
     <TargetFrameworks>$(TargetFrameworks);net6.0</TargetFrameworks>
-    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+    <SuppressTfmSupportBuildWarnings Condition="'$(TargetFramework)' == 'net6.0'">true</SuppressTfmSupportBuildWarnings>
     <TestTfmsInParallel>false</TestTfmsInParallel>
   </PropertyGroup>
   <ItemGroup>

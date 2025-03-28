@@ -51,7 +51,10 @@ public struct Buffer<T> : IDisposable
         _rentedBuffer = null;
         Length = 0;
     }
+}
 
+public static class Buffer
+{
     public static Buffer<byte> FromFile(string fileName, int sizePrediction = 0)
     {
         using var stream = LightFileStream.OpenRead(fileName);
@@ -59,7 +62,7 @@ public struct Buffer<T> : IDisposable
         var totalReadBytes = 0;
         while (true)
         {
-            var readBytes = stream.Read(buffer.Span.Slice(totalReadBytes));
+            var readBytes = stream.Read(buffer.Span[totalReadBytes..]);
             if (readBytes == 0)
                 break;
 

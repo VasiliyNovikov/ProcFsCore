@@ -3,10 +3,10 @@
   <PropertyGroup>
     <TargetFrameworks>$(TargetFrameworks);netstandard2.0</TargetFrameworks>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>0.2.1</Version>
+    <Version>0.2.2</Version>
     <PackageVersion>$(Version)$(VersionSuffix)</PackageVersion>
     <Authors>Vasyl Novikov</Authors>
-    <Description>Lightweight .NET procfs wrapper</Description>
+    <Description>.NET wrapper of Linux procfs</Description>
     <PackageTags>linux;procfs</PackageTags>
     <PackageProjectUrl>https://github.com/VasiliyNovikov/ProcFsCore</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

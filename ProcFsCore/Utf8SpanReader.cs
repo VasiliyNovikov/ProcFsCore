@@ -49,8 +49,8 @@ public struct Utf8SpanReader : IUtf8Reader
             return;
 
         var separatorPos = isSingleString 
-            ? Span.Slice(_position).IndexOf(separators)
-            : Span.Slice(_position).IndexOfAny(separators);
+            ? Span[_position..].IndexOf(separators)
+            : Span[_position..].IndexOfAny(separators);
 
         if (separatorPos < 0)
         {
@@ -67,7 +67,7 @@ public struct Utf8SpanReader : IUtf8Reader
         if (EndOfStream)
             return default;
 
-        var span = Span.Slice(_position);
+        var span = Span[_position..];
         var separatorPos = span.IndexOfAny(separators);
 
         if (separatorPos < 0)
@@ -76,7 +76,7 @@ public struct Utf8SpanReader : IUtf8Reader
             return span;
         }
 
-        var result = span.Slice(0, separatorPos);
+        var result = span[..separatorPos];
         _position += separatorPos + 1;
         SkipSeparators(separators);
         return result;
@@ -84,7 +84,7 @@ public struct Utf8SpanReader : IUtf8Reader
 
     public ReadOnlySpan<byte> ReadToEnd()
     {
-        var result = Span.Slice(_position);
+        var result = Span[_position..];
         _position = _length;
         return result;
     }

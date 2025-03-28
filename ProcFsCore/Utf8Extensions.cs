@@ -5,13 +5,13 @@ namespace ProcFsCore;
 
 public static class Utf8Extensions
 {
-    public static readonly Encoding Encoding = new UTF8Encoding(false);
+    public static readonly UTF8Encoding Encoding = new(false);
         
     public static int IndexOf(this ReadOnlySpan<byte> source, char value) => source.IndexOf((byte) value);
-    public static int IndexOf(this Span<byte> source, char value) => source.IndexOf((byte) value);
+    public static int IndexOf(this Span<byte> source, char value) => IndexOf((ReadOnlySpan<byte>) source, value);
         
-    public static int IndexOf(this ReadOnlySpan<byte> source, char value, int start) => start + source.Slice(start).IndexOf(value);
-    public static int IndexOf(this Span<byte> source, char value, int start) => start + source.Slice(start).IndexOf(value);
+    public static int IndexOf(this ReadOnlySpan<byte> source, char value, int start) => start + source[start..].IndexOf(value);
+    public static int IndexOf(this Span<byte> source, char value, int start) => IndexOf((ReadOnlySpan<byte>) source, value, start);
 
     private static readonly Func<char, bool> WhiteSpacePredicate = Char.IsWhiteSpace;
 
@@ -38,17 +38,6 @@ public static class Utf8Extensions
 
     public static ReadOnlySpan<byte> Trim(this Span<byte> source, Func<char, bool>? predicate = null) => ((ReadOnlySpan<byte>) source).Trim(predicate);
 
-    public static void Replace(this Span<byte> source, char oldValue, char newValue)
-    {
-        if (oldValue == newValue)
-            return;
-            
-        int index;
-        while ((index = source.IndexOf(oldValue)) >= 0)
-            source[index] = (byte)newValue;
-    }
-
-    public static ReadOnlyMemory<byte> ToUtf8(this string source) => Encoding.GetBytes(source);
     public static string ToUtf8String(this ReadOnlySpan<byte> source) => Encoding.GetString(source);
     public static string ToUtf8String(this Span<byte> source) => Encoding.GetString(source);
 }

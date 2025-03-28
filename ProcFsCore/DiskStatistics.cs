@@ -24,7 +24,7 @@ public readonly struct DiskStatistics
         TotalWeightedTime = totalWeightedTime;
     }
 
-    private static readonly ReadOnlyMemory<byte> LoopDeviceStart = "loop".ToUtf8();
+    private static ReadOnlySpan<byte> LoopDeviceStart => "loop"u8;
 
     internal static IEnumerable<DiskStatistics> GetAll(ProcFs instance)
     {
@@ -49,9 +49,9 @@ public readonly struct DiskStatistics
                     var reads = Operation.Parse(ref statReader);
                     var writes = Operation.Parse(ref statReader);
 
-                    if (deviceName.StartsWith(LoopDeviceStart.Span) &&
-                        reads.Count == 0 && reads.Merged == 0 && reads.Bytes == 0 && reads.Time == 0 &&
-                        writes.Count == 0 && writes.Merged == 0 && writes.Bytes == 0 && writes.Time == 0)
+                    if (deviceName.StartsWith(LoopDeviceStart) &&
+                        reads is { Count: 0, Merged: 0, Bytes: 0, Time: 0 } &&
+                        writes is { Count: 0, Merged: 0, Bytes: 0, Time: 0 })
                         continue;
 
                     statReader.SkipWord();

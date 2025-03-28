@@ -180,7 +180,7 @@ public struct Process
             {
                 try
                 {
-                    using var cmdLineBuffer = Buffer<byte>.FromFile(_instance.PathFor($"{Pid}/cmdline"), 256);
+                    using var cmdLineBuffer = Buffer.FromFile(_instance.PathFor($"{Pid}/cmdline"), 256);
                     var cmdLineSpan = cmdLineBuffer.Span.Trim(ZeroPredicate);
                     _commandLine = cmdLineSpan.IsEmpty ? "" : cmdLineSpan.ToUtf8String();
                 }

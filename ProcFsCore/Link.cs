@@ -18,15 +18,15 @@ public readonly struct Link
         INode = iNode;
     }
 
-    private static readonly ReadOnlyMemory<byte> SocketLinkStart = "socket:[".ToUtf8();
-    private static readonly ReadOnlyMemory<byte> PipeLinkStart = "pipe:[".ToUtf8();
-    private static readonly ReadOnlyMemory<byte> AnonLinkStart = "anon_inode:[".ToUtf8();
+    private static ReadOnlySpan<byte> SocketLinkStart => "socket:["u8;
+    private static ReadOnlySpan<byte> PipeLinkStart => "pipe:["u8;
+    private static ReadOnlySpan<byte> AnonLinkStart => "anon_inode:["u8;
         
     public static Link Read(string linkPath)
     {
         using var linkTextBuffer = Native.ReadLink(linkPath);
         var linkText = linkTextBuffer.Span;
-        if (linkText.StartsWith(SocketLinkStart.Span))
+        if (linkText.StartsWith(SocketLinkStart))
         {
 #pragma warning disable CA1806
             Utf8Parser.TryParse(linkText.Slice(SocketLinkStart.Length, linkText.Length - SocketLinkStart.Length - 1), out int iNode, out _);
@@ -34,7 +34,7 @@ public readonly struct Link
             return new Link(LinkType.Socket, null, iNode);
         }
 
-        if (linkText.StartsWith(PipeLinkStart.Span))
+        if (linkText.StartsWith(PipeLinkStart))
         {
 #pragma warning disable CA1806
             Utf8Parser.TryParse(linkText.Slice(PipeLinkStart.Length, linkText.Length - PipeLinkStart.Length - 1), out int iNode, out _);
@@ -42,7 +42,7 @@ public readonly struct Link
             return new Link(LinkType.Pipe, null, iNode);
         }
 
-        if (linkText.StartsWith(AnonLinkStart.Span))
+        if (linkText.StartsWith(AnonLinkStart))
             return new Link(LinkType.Anon, linkText.Slice(AnonLinkStart.Length, linkText.Length - AnonLinkStart.Length - 1).ToUtf8String(), 0);
 
         return new Link(LinkType.File, linkText.ToUtf8String(), 0);

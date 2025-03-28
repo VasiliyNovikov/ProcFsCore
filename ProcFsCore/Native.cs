@@ -12,17 +12,20 @@ internal static class Native
     private const string LibC = "libc.so.6";
 
     public static readonly int TicksPerSecond = SystemConfig(SystemConfigName.TicksPerSecond);
-    public static readonly int PageSize = SystemConfig(SystemConfigName.PageSize);
 
+#if NETSTANDARD2_0
     [DllImport(LibC, EntryPoint = "getpid")]
     public static extern int GetPid();
+#else
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int GetPid() => Environment.ProcessId;
+#endif
 
     [DllImport(LibC, EntryPoint = "sysconf", SetLastError = true)]
     private static extern int SystemConfig(SystemConfigName name);
 
     private enum SystemConfigName
     {
-        PageSize = 1,
         TicksPerSecond = 2
     }
 
@@ -46,8 +49,7 @@ internal static class Native
                 }
             }
 
-            buffer.Dispose();
-            buffer = new Buffer<byte>(buffer.Length * 2);
+            buffer.Resize(buffer.Length * 2);
         }
     }
 
