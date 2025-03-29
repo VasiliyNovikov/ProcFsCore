@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/.github/" />
+  <Folder Name="/.github/workflows/">
+    <File Path=".github/workflows/pipeline.yml" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="Directory.Packages.props" />
+    <File Path="LICENSE" />
+    <File Path="PlatformRestriction.cs" />
+    <File Path="ProcFsCore.targets" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="ProcFsCore/ProcFsCore.csproj" />
+  <Project Path="ProcFsCore.Tests/ProcFsCore.Tests.csproj" />
+  <Project Path="ProcFsCore.Benchmarks/ProcFsCore.Benchmarks.csproj" />
+  <Project Path="ProcFsCore.Experiments/ProcFsCore.Experiments.csproj" />
+</Solution>

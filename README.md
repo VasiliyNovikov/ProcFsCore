@@ -1,4 +1,5 @@
 # ProcFsCore
-.NET Core wrapper of Linux procfs
+.NET wrapper of Linux procfs
 
-[NuGet package](https://www.nuget.org/packages/ProcFsCore)
+[![ProcFsCore release](https://img.shields.io/nuget/v/ProcFsCore)](https://www.nuget.org/packages/ProcFsCore/)
+[![ProcFsCore download count](https://img.shields.io/nuget/dt/ProcFsCore)](https://www.nuget.org/packages/ProcFsCore/)

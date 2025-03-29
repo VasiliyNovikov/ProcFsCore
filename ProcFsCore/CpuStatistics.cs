@@ -6,7 +6,7 @@ namespace ProcFsCore;
 
 public struct CpuStatistics
 {
-    private static readonly ReadOnlyMemory<byte> CpuNumberStart = "cpu".ToUtf8();
+    private static ReadOnlySpan<byte> CpuNumberStart => "cpu"u8;
 
     public short? CpuNumber { get; private set; }
     public double UserTime { get; private set; }
@@ -24,10 +24,10 @@ public struct CpuStatistics
             while (!statReader.EndOfStream)
             {
                 var cpuStr = statReader.ReadWord();
-                if (!cpuStr.StartsWith(CpuNumberStart.Span))
+                if (!cpuStr.StartsWith(CpuNumberStart))
                     yield break;
 
-                var cpuNumberStr = cpuStr.Slice(CpuNumberStart.Length);
+                var cpuNumberStr = cpuStr[CpuNumberStart.Length..];
                 short? cpuNumber;
                 if (cpuNumberStr.Length == 0)
                     cpuNumber = null;

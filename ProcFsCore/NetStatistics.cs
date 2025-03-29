@@ -6,7 +6,7 @@ namespace ProcFsCore;
 public readonly struct NetStatistics
 {
     private const string NetDevRelativePath = "net/dev";
-    private static readonly ReadOnlyMemory<byte> InterfaceNameSeparators = ": ".ToUtf8();
+    private static ReadOnlySpan<byte> InterfaceNameSeparators => ": "u8;
 
     public string InterfaceName { get; }
     public readonly Direction Receive;
@@ -61,7 +61,7 @@ public readonly struct NetStatistics
             while (!statReader.EndOfStream)
             {
                 statReader.SkipWhiteSpaces();
-                var interfaceName = statReader.ReadFragment(InterfaceNameSeparators.Span).ToUtf8String();
+                var interfaceName = statReader.ReadFragment(InterfaceNameSeparators).ToUtf8String();
 
                 var receive = Direction.Parse(ref statReader);
 

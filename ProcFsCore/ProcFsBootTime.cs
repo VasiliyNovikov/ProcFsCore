@@ -7,7 +7,7 @@ namespace ProcFsCore;
 public class ProcFsBootTime
 {
     private const long NanosecondsPerTick =  1_000_000 / TimeSpan.TicksPerMillisecond;
-    private static readonly ReadOnlyMemory<byte> BtimeStr = "btime ".ToUtf8();
+    private static ReadOnlySpan<byte> BtimeStr => "btime "u8;
 
     private readonly ProcFs _instance;
     private readonly string _statPath;
@@ -42,7 +42,7 @@ public class ProcFsBootTime
         var statReader = new Utf8FileReader(statPath, 4096);
         try
         {
-            statReader.SkipFragment(BtimeStr.Span, true);
+            statReader.SkipFragment(BtimeStr, true);
             if (statReader.EndOfStream)
                 throw new NotSupportedException();
 

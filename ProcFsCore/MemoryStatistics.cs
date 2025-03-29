@@ -14,7 +14,7 @@ public struct MemoryStatistics
 #else
         .GetNames<Section>()
 #endif
-        .Select(n => n.ToUtf8())
+        .Select(n => (ReadOnlyMemory<byte>)Utf8Extensions.Encoding.GetBytes(n))
         .ToList();
 
     public long Total { get; private set; }
@@ -39,7 +39,7 @@ public struct MemoryStatistics
                 var section = statReader.ReadLine();
 
                 var nameEnd = section.IndexOf(':');
-                var name = section.Slice(0, nameEnd);
+                var name = section[..nameEnd];
 
                     
                 var valueStart = nameEnd + 1;
