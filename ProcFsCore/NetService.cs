@@ -65,13 +65,13 @@ public readonly struct NetService
     private static IEnumerable<NetService> GetAll(ProcFs instance, NetServiceType type, NetAddressVersion? addressVersion)
     {
         var serviceFile = NetServiceFiles[(int) type, (addressVersion ?? NetAddressVersion.IPv4) == NetAddressVersion.IPv4 ? 0 : 1];
-        var statReader = new Utf8FileReader(instance.PathFor(serviceFile), 256);
+        var statReader = new AsciiFileReader(instance.PathFor(serviceFile), 256);
         try
         {
             statReader.SkipLine();
             while (!statReader.EndOfStream)
             {
-                var lineReader = new Utf8SpanReader(statReader.ReadLine());
+                var lineReader = new AsciiSpanReader(statReader.ReadLine());
                 lineReader.SkipWhiteSpaces();
                 lineReader.SkipWord();
                 if (type != NetServiceType.Unix)

@@ -21,7 +21,7 @@ public readonly struct NetArpEntry
 
     internal static IEnumerable<NetArpEntry> GetAll(ProcFs instance)
     {
-        var statReader = new Utf8FileReader(instance.PathFor("net/arp"), 1024);
+        var statReader = new AsciiFileReader(instance.PathFor("net/arp"), 1024);
         try
         {
             statReader.SkipLine();
@@ -33,7 +33,7 @@ public readonly struct NetArpEntry
                 statReader.SkipWord();
                 var hardwareAddress = NetHardwareAddress.Parse(statReader.ReadWord());
                 var maskBytes = statReader.ReadWord();
-                var mask = maskBytes.Length == 1 && maskBytes[0] == '*' ? "*" : maskBytes.ToUtf8String();
+                var mask = maskBytes.Length == 1 && maskBytes[0] == '*' ? "*" : maskBytes.ToAsciiString();
                 var device = statReader.ReadStringWord();
                 yield return new NetArpEntry(address, hardwareAddress, mask, device);
             }

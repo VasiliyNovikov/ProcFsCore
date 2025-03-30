@@ -1,5 +1,4 @@
 using System;
-using System.Buffers.Text;
 using System.Collections.Generic;
 
 namespace ProcFsCore;
@@ -18,7 +17,7 @@ public struct CpuStatistics
 
     internal static IEnumerable<CpuStatistics> GetAll(ProcFs instance)
     {
-        var statReader = new Utf8FileReader(instance.PathFor("stat"), 4096);
+        var statReader = new AsciiFileReader(instance.PathFor("stat"), 4096);
         try
         {
             while (!statReader.EndOfStream)
@@ -28,16 +27,9 @@ public struct CpuStatistics
                     yield break;
 
                 var cpuNumberStr = cpuStr[CpuNumberStart.Length..];
-                short? cpuNumber;
-                if (cpuNumberStr.Length == 0)
-                    cpuNumber = null;
-                else
-                {
-#pragma warning disable CA1806
-                    Utf8Parser.TryParse(cpuNumberStr, out short num, out _);
-#pragma warning restore CA1806
-                    cpuNumber = num;
-                }
+                short? cpuNumber = cpuNumberStr.Length == 0
+                    ? null
+                    : AsciiParser.Parse<short>(cpuNumberStr);
 
                 var ticksPerSecond = (double)Native.TicksPerSecond;
                 var userTime = statReader.ReadInt64() / ticksPerSecond;

@@ -16,7 +16,7 @@ public readonly struct ProcessIO
     private static ReadOnlySpan<byte> StatNameSeparators => ": "u8;
     internal static ProcessIO Get(ProcFs instance, int pid)
     {
-        var statReader = new Utf8FileReader(instance.PathFor($"{pid}/io"), 256);
+        var statReader = new AsciiFileReader(instance.PathFor($"{pid}/io"), 256);
         try
         {
             statReader.SkipFragment(StatNameSeparators);
