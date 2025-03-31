@@ -170,7 +170,6 @@ public struct Process
         }
     }
 
-    private static readonly Func<char, bool> ZeroPredicate = ch => ch == '\0';
     private string? _commandLine;
     public string CommandLine
     {
@@ -180,9 +179,9 @@ public struct Process
             {
                 try
                 {
-                    using var cmdLineBuffer = Buffer.FromFile(_instance.PathFor($"{Pid}/cmdline"), 256);
-                    var cmdLineSpan = cmdLineBuffer.Span.Trim(ZeroPredicate);
-                    _commandLine = cmdLineSpan.IsEmpty ? "" : cmdLineSpan.ToUtf8String();
+                    var reader = new AsciiFileReader(_instance.PathFor($"{Pid}/cmdline"), 256);
+                    var cmdLineSpan = reader.ReadToEnd().Trim(0);
+                    _commandLine = cmdLineSpan.IsEmpty ? "" : cmdLineSpan.ToAsciiString();
                 }
                 catch (IOException)
                 {
@@ -236,7 +235,7 @@ public struct Process
         _commandLine = null;
         _startTimeUtc = null;
         var statPath = _instance.PathFor(Pid == 0 ? "self/stat" : $"{Pid}/stat"); // 0 - special case for current process of non-default instance
-        var statReader = new Utf8FileReader(statPath, 512);
+        var statReader = new AsciiFileReader(statPath, 512);
         try
         {
             // See http://man7.org/linux/man-pages/man5/proc.5.html /proc/[pid]/stat section
@@ -246,7 +245,7 @@ public struct Process
 
             // (2) name
             statReader.SkipSeparator('(');
-            _name = statReader.ReadFragment(')').ToUtf8String();
+            _name = statReader.ReadFragment(')').ToAsciiString();
             statReader.SkipWhiteSpaces();
 
             // (3) state

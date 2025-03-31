@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace ProcFsCore.Tests;
 
 [TestClass]
-public class NativeTests
+public class LinkTests
 {
     [TestMethod]
     public void Test_ReadLink()
@@ -19,14 +19,10 @@ public class NativeTests
         {
             socket.Bind(new IPEndPoint(IPAddress.Any, 12345));
             var links = Directory.EnumerateFiles($"/proc/{Native.GetPid()}/fd")
-                .Select(l =>
-                {
-                    using var linkBuffer = Native.ReadLink(l);
-                    return linkBuffer.Span.ToUtf8String();
-                })
-                .ToHashSet();
-            Assert.IsTrue(links.Contains(fileName));
-            Assert.IsTrue(links.Any(l => l.StartsWith("socket:[", StringComparison.Ordinal)));
+                                       .Select(Link.Read)
+                                       .ToArray();
+            Assert.IsTrue(links.Any(l => l.Path == fileName));
+            Assert.IsTrue(links.Any(l => l.Type == LinkType.Socket));
         }
     }
 }

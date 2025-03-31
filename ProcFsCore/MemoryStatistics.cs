@@ -1,5 +1,4 @@
 using System;
-using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -14,7 +13,7 @@ public struct MemoryStatistics
 #else
         .GetNames<Section>()
 #endif
-        .Select(n => (ReadOnlyMemory<byte>)Utf8Extensions.Encoding.GetBytes(n))
+        .Select(n => (ReadOnlyMemory<byte>)AsciiExtensions.Encoding.GetBytes(n))
         .ToList();
 
     public long Total { get; private set; }
@@ -26,7 +25,7 @@ public struct MemoryStatistics
     [SkipLocalsInit]
     internal static unsafe MemoryStatistics Get(ProcFs instance)
     {
-        var statReader = new Utf8FileReader(instance.PathFor("meminfo"), 2048);
+        var statReader = new AsciiFileReader(instance.PathFor("meminfo"), 2048);
         try
         {
             var sections = stackalloc long[(int) Section.Max];
@@ -48,10 +47,7 @@ public struct MemoryStatistics
                 var valueEnd = section.IndexOf(' ', valueStart);
                 if (valueEnd < 0)
                     valueEnd = section.Length;
-#pragma warning disable CA1806
-                Utf8Parser.TryParse(section.Slice(valueStart, valueEnd - valueStart), out long value, out _);
-#pragma warning restore CA1806
-                value *= 0x400;
+                var value = 0x400 * AsciiParser.Parse<long>(section.Slice(valueStart, valueEnd - valueStart));
 
                 for (Section sectionType = default; sectionType < Section.Max; ++sectionType)
                     if (Names[(int) sectionType].Span.SequenceEqual(name))

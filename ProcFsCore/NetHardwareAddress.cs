@@ -1,5 +1,4 @@
 using System;
-using System.Buffers.Text;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -29,10 +28,7 @@ public unsafe struct NetHardwareAddress
         for (var i = 0; i < Length; ++i)
         {
             var hexPart = address.Slice(i * 3, 2);
-#pragma warning disable CA1806
-            Utf8Parser.TryParse(hexPart, out byte addressPart, out _, 'x');
-#pragma warning restore CA1806
-            addressBytes[i] = addressPart;
+            addressBytes[i] = AsciiParser.Parse<byte>(hexPart, 'x');
         }
 
         return new NetHardwareAddress(addressBytes);

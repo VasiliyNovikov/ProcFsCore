@@ -3,32 +3,31 @@ using System.Runtime.CompilerServices;
 
 namespace ProcFsCore;
 
-public struct Utf8SpanReader : IUtf8Reader
+internal struct AsciiSpanReader : IAsciiReader
 {
     private readonly unsafe byte* _pointer;
     private readonly int _length;
-    private readonly ReadOnlyMemory<byte> _whiteSpaces;
-    private readonly ReadOnlyMemory<byte> _lineSeparators;
 
     private int _position;
 
     private unsafe ReadOnlySpan<byte> Span
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new ReadOnlySpan<byte>(_pointer, _length);
+        get => new(_pointer, _length);
     }
 
-    public ReadOnlySpan<byte> WhiteSpaces => _whiteSpaces.Span;
-    public ReadOnlySpan<byte> LineSeparators => _lineSeparators.Span;
-    public bool EndOfStream => _position == _length;
+    public bool EndOfStream
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _position == _length;
+    }
 
-    public unsafe Utf8SpanReader(ReadOnlySpan<byte> span, ReadOnlyMemory<byte>? whiteSpaces = null, ReadOnlyMemory<byte>? lineSeparators = null)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public unsafe AsciiSpanReader(ReadOnlySpan<byte> span)
     {
         fixed(byte* ptr = &span.GetPinnableReference())
             _pointer = ptr;
         _length = span.Length;
-        _whiteSpaces = (whiteSpaces ?? Utf8FileReader.DefaultWhiteSpaces);
-        _lineSeparators = (lineSeparators ?? Utf8FileReader.DefaultLineSeparators);
         _position = 0;
     }
 
@@ -36,6 +35,7 @@ public struct Utf8SpanReader : IUtf8Reader
     {
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SkipSeparators(scoped ReadOnlySpan<byte> separators)
     {
         var span = Span;
@@ -43,6 +43,7 @@ public struct Utf8SpanReader : IUtf8Reader
             ++_position;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SkipFragment(scoped ReadOnlySpan<byte> separators, bool isSingleString = false)
     {
         if (EndOfStream)
@@ -62,6 +63,7 @@ public struct Utf8SpanReader : IUtf8Reader
         SkipSeparators(separators);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> ReadFragment(scoped ReadOnlySpan<byte> separators)
     {
         if (EndOfStream)
@@ -82,6 +84,7 @@ public struct Utf8SpanReader : IUtf8Reader
         return result;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> ReadToEnd()
     {
         var result = Span[_position..];
@@ -89,5 +92,5 @@ public struct Utf8SpanReader : IUtf8Reader
         return result;
     }
 
-    public override string ToString() => Span.ToUtf8String();
+    public override string ToString() => Span.ToAsciiString();
 }

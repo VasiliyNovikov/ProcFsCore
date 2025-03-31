@@ -39,7 +39,7 @@ public class ProcFsBootTime
 
     private static DateTime GetStatValueUtc(string statPath)
     {
-        var statReader = new Utf8FileReader(statPath, 4096);
+        var statReader = new AsciiFileReader(statPath, 4096);
         try
         {
             statReader.SkipFragment(BtimeStr, true);

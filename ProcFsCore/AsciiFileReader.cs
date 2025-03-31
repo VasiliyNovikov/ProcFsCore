@@ -1,52 +1,45 @@
 using System;
+using System.Buffers;
+using System.Runtime.CompilerServices;
 
 namespace ProcFsCore;
 
-public struct Utf8FileReader : IUtf8Reader
+internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : IAsciiReader
 {
-    internal static readonly ReadOnlyMemory<byte> DefaultWhiteSpaces = " \n\t\v\f\r"u8.ToArray();
-    internal static readonly ReadOnlyMemory<byte> DefaultLineSeparators = "\n\r"u8.ToArray();
+    private readonly LightFileStream _stream = LightFileStream.OpenRead(fileName);
 
-    private readonly LightFileStream _stream;
-    private readonly ReadOnlyMemory<byte> _whiteSpaces;
-    private readonly ReadOnlyMemory<byte> _lineSeparators;
+    private byte[] _buffer = ArrayPool<byte>.Shared.Rent(initialBufferSize);
+    private int _lockedStart = -1;
+    private int _bufferedStart = 0;
+    private int _bufferedEnd = 0;
+    private bool _endOfStream = false;
 
-    private Buffer<byte> _buffer;
-    private int _lockedStart;
-    private int _bufferedStart;
-    private int _bufferedEnd;
-    private bool _endOfStream;
-
-    public ReadOnlySpan<byte> WhiteSpaces => _whiteSpaces.Span;
-    public ReadOnlySpan<byte> LineSeparators => _lineSeparators.Span;
-
-    public bool EndOfStream => _endOfStream && _bufferedStart == _bufferedEnd;
-
-    public Utf8FileReader(string fileName, int initialBufferSize = 0, ReadOnlyMemory<byte>? whiteSpaces = null, ReadOnlyMemory<byte>? lineSeparators = null)
+    private Span<byte> BufferSpan
     {
-        _stream = LightFileStream.OpenRead(fileName);
-        _whiteSpaces = whiteSpaces ?? DefaultWhiteSpaces;
-        _lineSeparators = lineSeparators ?? DefaultLineSeparators;
-
-        _buffer = new Buffer<byte>(initialBufferSize);
-        _lockedStart = -1;
-        _bufferedStart = 0;
-        _bufferedEnd = 0;
-        _endOfStream = false;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _buffer;
     }
 
+    public bool EndOfStream
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _endOfStream && _bufferedStart == _bufferedEnd;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {
-        _buffer.Dispose();
+        ArrayPool<byte>.Shared.Return(_buffer);
         _stream.Dispose();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ReadToBuffer()
     {
         if (_endOfStream)
             return;
 
-        var bufferSpan = _buffer.Span;
+        var bufferSpan = BufferSpan;
         if (_bufferedEnd < _buffer.Length)
         {
             var bytesRead = _stream.Read(bufferSpan[_bufferedEnd..]);
@@ -58,7 +51,7 @@ public struct Utf8FileReader : IUtf8Reader
         if (_bufferedStart > 0 && _lockedStart == -1 || _lockedStart > 0)
         {
             var start = _lockedStart == -1 ? _bufferedStart : _lockedStart;
-            bufferSpan.Slice(start).CopyTo(bufferSpan);
+            bufferSpan[start..].CopyTo(bufferSpan);
             _bufferedEnd -= start;
             _bufferedStart -= start;
             if (_lockedStart > 0)
@@ -66,22 +59,25 @@ public struct Utf8FileReader : IUtf8Reader
             ReadToBuffer();
             return;
         }
-            
-        _buffer.Resize(_buffer.Length * 2);
+
+        var newBuffer = ArrayPool<byte>.Shared.Rent(_buffer.Length + 1);
+        bufferSpan.CopyTo(newBuffer);
+        ArrayPool<byte>.Shared.Return(_buffer);
+        _buffer = newBuffer;
         ReadToBuffer();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void EnsureReadToBuffer()
     {
         if (_bufferedStart == _bufferedEnd)
             ReadToBuffer();
     }
 
-    private void LockBuffer()
-    {
-        _lockedStart = _bufferedStart;
-    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void LockBuffer() => _lockedStart = _bufferedStart;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void UnlockBuffer()
     {
         _lockedStart = -1;
@@ -89,6 +85,7 @@ public struct Utf8FileReader : IUtf8Reader
             _bufferedStart = _bufferedEnd = 0;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ConsumeBuffer(int count)
     {
         _bufferedStart += count;
@@ -99,16 +96,18 @@ public struct Utf8FileReader : IUtf8Reader
         }
     }
         
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SkipSeparators(scoped ReadOnlySpan<byte> separators)
     {
         EnsureReadToBuffer();
-        while (!EndOfStream && separators.IndexOf(_buffer.Span[_bufferedStart]) >= 0)
+        while (!EndOfStream && separators.IndexOf(BufferSpan[_bufferedStart]) >= 0)
         {
             ConsumeBuffer(1);
             EnsureReadToBuffer();
         }
     }
         
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SkipFragment(scoped ReadOnlySpan<byte> separators, bool isSingleString = false)
     {
         if (EndOfStream)
@@ -121,8 +120,8 @@ public struct Utf8FileReader : IUtf8Reader
         {
 
             var separatorPos = isSingleString
-                ? _buffer.Span.Slice(_bufferedStart, _bufferedEnd - _bufferedStart).IndexOf(separators)
-                : _buffer.Span.Slice(_bufferedStart, _bufferedEnd - _bufferedStart).IndexOfAny(separators);
+                ? BufferSpan.Slice(_bufferedStart, _bufferedEnd - _bufferedStart).IndexOf(separators)
+                : BufferSpan.Slice(_bufferedStart, _bufferedEnd - _bufferedStart).IndexOfAny(separators);
             if (separatorPos >= 0)
             {
                 ConsumeBuffer(separatorPos);
@@ -137,6 +136,7 @@ public struct Utf8FileReader : IUtf8Reader
             SkipSeparators(separators);
     }
         
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> ReadFragment(scoped ReadOnlySpan<byte> separators)
     {
         if (EndOfStream)
@@ -147,7 +147,7 @@ public struct Utf8FileReader : IUtf8Reader
         var separatorPos = -1;
         while (!_endOfStream)
         {
-            separatorPos = _buffer.Span.Slice(_bufferedStart, _bufferedEnd - _bufferedStart).IndexOfAny(separators);
+            separatorPos = BufferSpan.Slice(_bufferedStart, _bufferedEnd - _bufferedStart).IndexOfAny(separators);
             if (separatorPos >= 0)
                 break;
             ReadToBuffer();
@@ -158,7 +158,7 @@ public struct Utf8FileReader : IUtf8Reader
             var resultLength = _bufferedEnd - _bufferedStart;
             LockBuffer();
             ConsumeBuffer(_bufferedEnd - _bufferedStart);
-            var result = _buffer.Span.Slice(_lockedStart, resultLength);
+            var result = BufferSpan.Slice(_lockedStart, resultLength);
             UnlockBuffer();
             return result;
         }
@@ -167,20 +167,21 @@ public struct Utf8FileReader : IUtf8Reader
             LockBuffer();
             ConsumeBuffer(separatorPos + 1);
             SkipSeparators(separators);
-            var result = _buffer.Span.Slice(_lockedStart, separatorPos);
+            var result = BufferSpan.Slice(_lockedStart, separatorPos);
             UnlockBuffer();
             return result;
         }
     }
         
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> ReadToEnd()
     {
         while (!_endOfStream)
             ReadToBuffer();
-        var result = _buffer.Span.Slice(_bufferedStart, _bufferedEnd);
+        var result = BufferSpan.Slice(_bufferedStart, _bufferedEnd);
         ConsumeBuffer(_bufferedEnd - _bufferedStart);
         return result;
     }
 
-    public override string ToString() => _buffer.Span.Slice(_bufferedStart, _bufferedEnd - _bufferedStart).ToUtf8String();
+    public override string ToString() => BufferSpan.Slice(_bufferedStart, _bufferedEnd - _bufferedStart).ToAsciiString();
 }

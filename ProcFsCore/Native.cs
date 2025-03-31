@@ -31,30 +31,21 @@ internal static class Native
 
     [DllImport(LibC, EntryPoint = "readlink", CharSet = CharSet.Ansi, SetLastError = true)]
     private static extern unsafe IntPtr ReadLink(string path, void* buffer, IntPtr bufferSize);
-    public static unsafe Buffer<byte> ReadLink(string path)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe bool ReadLink(string path, Span<byte> buffer, out int bytesRead)
     {
-        var buffer = new Buffer<byte>(256);
-        while (true)
+        fixed (void* bufferPtr = &buffer.GetPinnableReference())
         {
-            fixed (void* bufferPtr = &buffer.Span.GetPinnableReference())
-            {
-
-                var readSize = ReadLink(path, bufferPtr, new IntPtr(buffer.Length)).ToInt32();
-                if (readSize < 0)
-                    throw new Win32Exception();
-                if (readSize < buffer.Length)
-                {
-                    buffer.Resize(readSize);
-                    return buffer;
-                }
-            }
-
-            buffer.Resize(buffer.Length * 2);
+            bytesRead = ReadLink(path, bufferPtr, new IntPtr(buffer.Length)).ToInt32();
+            return bytesRead < 0
+                ? throw new Win32Exception()
+                : bytesRead < buffer.Length;
         }
     }
 
     [DllImport(LibC, EntryPoint = "open", CharSet = CharSet.Ansi, SetLastError = true)]
     private static extern int OpenRaw(string path, int flags);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int Open(string path, int flags)
     {
         var descriptor = OpenRaw(path, flags);
@@ -65,6 +56,7 @@ internal static class Native
 
     [DllImport(LibC, EntryPoint = "close", SetLastError = true)]
     private static extern int CloseRaw(int descriptor);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Close(int descriptor)
     {
         if (CloseRaw(descriptor) == -1)
@@ -73,6 +65,7 @@ internal static class Native
         
     [DllImport(LibC, EntryPoint = "read", SetLastError = true)]
     private static extern unsafe IntPtr Read(int descriptor, void* buffer, IntPtr bufferSize);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe int Read(int descriptor, Span<byte> buffer)
     {
         fixed (void* bufferPtr = &buffer.GetPinnableReference())
@@ -86,6 +79,7 @@ internal static class Native
 
     [DllImport(LibC, EntryPoint = "write", SetLastError = true)]
     private static extern unsafe IntPtr Write(int descriptor, void* buffer, IntPtr bufferSize);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe int Write(int descriptor, ReadOnlySpan<byte> buffer)
     {
         fixed (void* bufferPtr = &buffer.GetPinnableReference())

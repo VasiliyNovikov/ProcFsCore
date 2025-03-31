@@ -21,7 +21,7 @@ public readonly struct NetStatistics
 
     internal static int GetReceiveColumnCount(ProcFs instance)
     {
-        var statReader = new Utf8FileReader(instance.PathFor(NetDevRelativePath), 512);
+        var statReader = new AsciiFileReader(instance.PathFor(NetDevRelativePath), 512);
         try
         {
             statReader.SkipLine();
@@ -53,7 +53,7 @@ public readonly struct NetStatistics
 
     private static IEnumerable<NetStatistics> GetAll(string path, int receiveColumnCount)
     {
-        var statReader = new Utf8FileReader(path, 2048);
+        var statReader = new AsciiFileReader(path, 2048);
         try
         {
             statReader.SkipLine();
@@ -61,7 +61,7 @@ public readonly struct NetStatistics
             while (!statReader.EndOfStream)
             {
                 statReader.SkipWhiteSpaces();
-                var interfaceName = statReader.ReadFragment(InterfaceNameSeparators).ToUtf8String();
+                var interfaceName = statReader.ReadFragment(InterfaceNameSeparators).ToAsciiString();
 
                 var receive = Direction.Parse(ref statReader);
 
@@ -97,7 +97,7 @@ public readonly struct NetStatistics
         }
 
         internal static Direction Parse<TReader>(ref TReader reader)
-            where TReader : struct, IUtf8Reader
+            where TReader : struct, IAsciiReader
         {
             var bytes = reader.ReadInt64();
             var packets = reader.ReadInt64();

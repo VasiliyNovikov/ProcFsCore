@@ -31,13 +31,13 @@ public readonly struct DiskStatistics
         // http://man7.org/linux/man-pages/man5/proc.5.html
         // https://www.kernel.org/doc/Documentation/iostats.txt
         var diskStatsPath = instance.PathFor("diskstats");
-        var statsReader = new Utf8FileReader(diskStatsPath, 1024);
+        var statsReader = new AsciiFileReader(diskStatsPath, 1024);
         try
         {
             while (!statsReader.EndOfStream)
             {
                 var statLine = statsReader.ReadLine();
-                var statReader = new Utf8SpanReader(statLine);
+                var statReader = new AsciiSpanReader(statLine);
                 try
                 {
                     statReader.SkipWhiteSpaces();
@@ -58,7 +58,7 @@ public readonly struct DiskStatistics
                     var totalTime = statReader.ReadInt64() / 1_000_000.0;
                     var totalWeightedTime = statReader.ReadInt64() / 1_000_000.0;
 
-                    yield return new DiskStatistics(deviceName.ToUtf8String(), reads, writes, totalTime, totalWeightedTime);
+                    yield return new DiskStatistics(deviceName.ToAsciiString(), reads, writes, totalTime, totalWeightedTime);
                 }
                 finally
                 {
@@ -88,7 +88,7 @@ public readonly struct DiskStatistics
         }
 
         internal static Operation Parse<TReader>(ref TReader reader)
-            where TReader : struct, IUtf8Reader
+            where TReader : struct, IAsciiReader
         {
             var count = reader.ReadInt64();
             var merged = reader.ReadInt64();

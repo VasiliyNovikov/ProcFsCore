@@ -1,6 +1,5 @@
 using System;
 using System.Text;
-using System.Buffers.Text;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -48,24 +47,21 @@ public unsafe struct NetAddress
                 for (var i = 0; i < addressLength; ++i)
                 {
                     var hexPart = addressString.Slice(i << 3, 8);
-#pragma warning disable CA1806
-                    Utf8Parser.TryParse(hexPart, out uint addressPart, out _, 'x');
-#pragma warning restore CA1806
-                    address[i] = addressPart;
+                    address[i] = AsciiParser.Parse<uint>(hexPart, 'x');
                 }
 
-                return new NetAddress(MemoryMarshal.Cast<uint, byte>(address.Slice(0, addressLength)));
+                return new NetAddress(MemoryMarshal.Cast<uint, byte>(address[..addressLength]));
             }
             case NetAddressFormat.Human:
             {
 #if NETSTANDARD2_0
-                    var addressStr = Encoding.UTF8.GetString(addressString);
-                    var frameworkAddress = IPAddress.Parse(addressStr);
-                    var addressBytes = frameworkAddress.GetAddressBytes();
-                    return new NetAddress(addressBytes);
+                var addressStr = AsciiExtensions.Encoding.GetString(addressString);
+                var frameworkAddress = IPAddress.Parse(addressStr);
+                var addressBytes = frameworkAddress.GetAddressBytes();
+                return new NetAddress(addressBytes);
 #else
                 Span<char> addressStr = stackalloc char[64];
-                Utf8Extensions.Encoding.GetChars(addressString, addressStr);
+                AsciiExtensions.Encoding.GetChars(addressString, addressStr);
                 var frameworkAddress = IPAddress.Parse(addressStr[..addressString.Length]);
                 Span<byte> addressBytes = stackalloc byte[MaxAddressLength];
                 frameworkAddress.TryWriteBytes(addressBytes, out var addressLength);
