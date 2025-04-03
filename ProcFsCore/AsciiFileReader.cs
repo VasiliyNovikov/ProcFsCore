@@ -84,17 +84,6 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void LockBuffer() => _lockedStart = _bufferedStart;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void UnlockBuffer()
-    {
-        _lockedStart = -1;
-        if (_bufferedStart == _bufferedEnd && _bufferedStart != 0)
-            _bufferedStart = _bufferedEnd = 0;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Skip(int count)
     {
         _bufferedStart += count;
@@ -176,20 +165,19 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
 
         if (separatorPos < 0)
         {
-            var resultLength = _bufferedEnd - _bufferedStart;
-            LockBuffer();
-            Skip(_bufferedEnd - _bufferedStart);
-            var result = BufferSpan.Slice(_lockedStart, resultLength);
-            UnlockBuffer();
+            var result = DataSpan;
+            Skip(result.Length);
             return result;
         }
         else
         {
-            LockBuffer();
+            _lockedStart = _bufferedStart;
             Skip(separatorPos + 1);
             SkipSeparators(separators);
             var result = BufferSpan.Slice(_lockedStart, separatorPos);
-            UnlockBuffer();
+            _lockedStart = -1;
+            if (_bufferedStart == _bufferedEnd && _bufferedStart != 0)
+                _bufferedStart = _bufferedEnd = 0;
             return result;
         }
     }
