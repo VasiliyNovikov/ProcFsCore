@@ -71,39 +71,37 @@ public readonly struct NetService
             statReader.SkipLine();
             while (!statReader.EndOfStream)
             {
-                var lineReader = new AsciiSpanReader(statReader.ReadLine());
-                lineReader.SkipWhiteSpaces();
-                lineReader.SkipWord();
+                statReader.SkipWhiteSpaces();
+                statReader.SkipWord();
                 if (type != NetServiceType.Unix)
                 {
-                    var localEndPoint = NetEndPoint.Parse(ref lineReader);
-                    var remoteEndPoint = NetEndPoint.Parse(ref lineReader);
-                    var state = (NetServiceState)lineReader.ReadInt16('x');
+                    var localEndPoint = NetEndPoint.Read(ref statReader);
+                    var remoteEndPoint = NetEndPoint.Read(ref statReader);
+                    var state = (NetServiceState)statReader.ReadInt16('x');
                         
-                    lineReader.SkipWord();
-                    lineReader.SkipWord();
-                    lineReader.SkipWord();
-                    lineReader.SkipWord();
-                    lineReader.SkipWord();
+                    statReader.SkipWord();
+                    statReader.SkipWord();
+                    statReader.SkipWord();
+                    statReader.SkipWord();
+                    statReader.SkipWord();
 
-                    var iNode = lineReader.ReadInt32();
+                    var iNode = statReader.ReadInt32();
                         
-                    lineReader.SkipLine();
-
                     yield return new NetService(type, localEndPoint, remoteEndPoint, null, state, iNode);
                 }
                 else
                 {
-                    lineReader.SkipWord();
-                    lineReader.SkipWord();
-                    lineReader.SkipWord();
-                    lineReader.SkipWord();
-                    var state = (NetServiceState)lineReader.ReadInt16('x');
-                    var iNode = lineReader.ReadInt32();
-                    var path = lineReader.EndOfStream ? null : lineReader.ReadStringWord();
+                    statReader.SkipWord();
+                    statReader.SkipWord();
+                    statReader.SkipWord();
+                    statReader.SkipWord();
+                    var state = (NetServiceState)statReader.ReadInt16('x');
+                    var iNode = statReader.ReadInt32();
+                    var path = statReader.EndOfStream ? null : statReader.ReadStringWord();
 
                     yield return new NetService(type, default, default, path, state, iNode);
                 }
+                statReader.SkipLine();
             }
         }
         finally

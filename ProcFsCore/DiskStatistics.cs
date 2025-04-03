@@ -36,34 +36,22 @@ public readonly struct DiskStatistics
         {
             while (!statsReader.EndOfStream)
             {
-                var statLine = statsReader.ReadLine();
-                var statReader = new AsciiSpanReader(statLine);
-                try
-                {
-                    statReader.SkipWhiteSpaces();
-                    statReader.SkipWord();
-                    statReader.SkipWord();
+                statsReader.SkipWhiteSpaces();
+                statsReader.SkipWord();
+                statsReader.SkipWord();
 
-                    var deviceName = statReader.ReadWord();
+                var deviceName = statsReader.ReadWord();
 
-                    var reads = Operation.Parse(ref statReader);
-                    var writes = Operation.Parse(ref statReader);
+                var reads = Operation.Read(ref statsReader);
+                var writes = Operation.Read(ref statsReader);
 
-                    if (deviceName.StartsWith(LoopDeviceStart) &&
-                        reads is { Count: 0, Merged: 0, Bytes: 0, Time: 0 } &&
-                        writes is { Count: 0, Merged: 0, Bytes: 0, Time: 0 })
-                        continue;
+                statsReader.SkipWord();
+                var totalTime = statsReader.ReadInt64() / 1_000_000.0;
+                var totalWeightedTime = statsReader.ReadInt64() / 1_000_000.0;
 
-                    statReader.SkipWord();
-                    var totalTime = statReader.ReadInt64() / 1_000_000.0;
-                    var totalWeightedTime = statReader.ReadInt64() / 1_000_000.0;
+                yield return new DiskStatistics(deviceName.ToAsciiString(), reads, writes, totalTime, totalWeightedTime);
 
-                    yield return new DiskStatistics(deviceName.ToAsciiString(), reads, writes, totalTime, totalWeightedTime);
-                }
-                finally
-                {
-                    statReader.Dispose();
-                }
+                statsReader.SkipLine();
             }
         }
         finally
@@ -87,8 +75,7 @@ public readonly struct DiskStatistics
             Time = time;
         }
 
-        internal static Operation Parse<TReader>(ref TReader reader)
-            where TReader : struct, IAsciiReader
+        internal static Operation Read(ref AsciiFileReader reader)
         {
             var count = reader.ReadInt64();
             var merged = reader.ReadInt64();

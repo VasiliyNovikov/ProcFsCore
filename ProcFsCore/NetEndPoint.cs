@@ -14,7 +14,10 @@ public readonly struct NetEndPoint
         Port = port;
     }
 
-    internal static NetEndPoint Parse(ref AsciiSpanReader statReader) => new(NetAddress.Parse(statReader.ReadFragment(':'), NetAddressFormat.Hex), statReader.ReadInt32('x'));
+    internal static NetEndPoint Read(ref AsciiFileReader statReader)
+    {
+        return new NetEndPoint(NetAddress.Parse(statReader.ReadFragment(':'), NetAddressFormat.Hex), statReader.ReadInt32('x'));
+    }
 
     public override string? ToString() => ((IPEndPoint?)this)?.ToString();
 
