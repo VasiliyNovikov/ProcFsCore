@@ -63,12 +63,12 @@ public readonly struct NetStatistics
                 statReader.SkipWhiteSpaces();
                 var interfaceName = statReader.ReadFragment(InterfaceNameSeparators).ToAsciiString();
 
-                var receive = Direction.Parse(ref statReader);
+                var receive = Direction.Read(ref statReader);
 
                 for (var i = 0; i < receiveColumnCount - 4; ++i)
                     statReader.SkipWord();
 
-                var transmit = Direction.Parse(ref statReader);
+                var transmit = Direction.Read(ref statReader);
 
                 statReader.SkipLine();
 
@@ -96,8 +96,7 @@ public readonly struct NetStatistics
             Drops = drops;
         }
 
-        internal static Direction Parse<TReader>(ref TReader reader)
-            where TReader : struct, IAsciiReader
+        internal static Direction Read(ref AsciiFileReader reader)
         {
             var bytes = reader.ReadInt64();
             var packets = reader.ReadInt64();
