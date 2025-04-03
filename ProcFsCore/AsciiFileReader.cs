@@ -23,6 +23,12 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
         get => _buffer;
     }
 
+    private Span<byte> DataSpan
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _buffer.AsSpan(_bufferedStart, _bufferedEnd - _bufferedStart);
+    }
+
     public bool EndOfStream
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -89,7 +95,7 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ConsumeBuffer(int count)
+    private void Skip(int count)
     {
         _bufferedStart += count;
         if (_bufferedStart == _bufferedEnd && _lockedStart == -1)
@@ -103,9 +109,9 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
     public void SkipSeparators(scoped ReadOnlySpan<byte> separators)
     {
         EnsureReadToBuffer();
-        while (!EndOfStream && separators.IndexOf(BufferSpan[_bufferedStart]) >= 0)
+        while (!EndOfStream && separators.IndexOf(DataSpan[0]) >= 0)
         {
-            ConsumeBuffer(1);
+            Skip(1);
             EnsureReadToBuffer();
         }
     }
@@ -124,14 +130,14 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
         while (!_hasReadToTheEnd)
         {
 
-            var separatorPos = BufferSpan.Slice(_bufferedStart, _bufferedEnd - _bufferedStart).IndexOfAny(separators);
+            var separatorPos = DataSpan.IndexOfAny(separators);
             if (separatorPos >= 0)
             {
-                ConsumeBuffer(separatorPos);
+                Skip(separatorPos);
                 break;
             }
 
-            ConsumeBuffer(Math.Max(_bufferedEnd - _bufferedStart, 0));
+            Skip(Math.Max(_bufferedEnd - _bufferedStart, 0));
             ReadToBuffer();
         }
 
@@ -162,7 +168,7 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
         var separatorPos = -1;
         while (!_hasReadToTheEnd)
         {
-            separatorPos = BufferSpan.Slice(_bufferedStart, _bufferedEnd - _bufferedStart).IndexOfAny(separators);
+            separatorPos = DataSpan.IndexOfAny(separators);
             if (separatorPos >= 0)
                 break;
             ReadToBuffer();
@@ -172,7 +178,7 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
         {
             var resultLength = _bufferedEnd - _bufferedStart;
             LockBuffer();
-            ConsumeBuffer(_bufferedEnd - _bufferedStart);
+            Skip(_bufferedEnd - _bufferedStart);
             var result = BufferSpan.Slice(_lockedStart, resultLength);
             UnlockBuffer();
             return result;
@@ -180,7 +186,7 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
         else
         {
             LockBuffer();
-            ConsumeBuffer(separatorPos + 1);
+            Skip(separatorPos + 1);
             SkipSeparators(separators);
             var result = BufferSpan.Slice(_lockedStart, separatorPos);
             UnlockBuffer();
@@ -217,10 +223,10 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
     {
         while (!_hasReadToTheEnd)
             ReadToBuffer();
-        var result = BufferSpan.Slice(_bufferedStart, _bufferedEnd);
-        ConsumeBuffer(_bufferedEnd - _bufferedStart);
+        var result = DataSpan;
+        Skip(result.Length);
         return result;
     }
 
-    public override string ToString() => BufferSpan.Slice(_bufferedStart, _bufferedEnd - _bufferedStart).ToAsciiString();
+    public override string ToString() => DataSpan.ToAsciiString();
 }
