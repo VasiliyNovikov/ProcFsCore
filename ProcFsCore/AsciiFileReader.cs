@@ -12,7 +12,6 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
     private readonly LightFileStream _stream = LightFileStream.OpenRead(fileName);
 
     private byte[] _buffer = ArrayPool<byte>.Shared.Rent(initialBufferSize);
-    private int _lockedStart = -1;
     private int _bufferedStart = 0;
     private int _bufferedEnd = 0;
     private bool _hasReadToTheEnd = false;
@@ -45,64 +44,83 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ReadToBuffer()
     {
-        if (_hasReadToTheEnd)
-            return;
-
-        var bufferSpan = BufferSpan;
-        if (_bufferedEnd < _buffer.Length)
+        while (!_hasReadToTheEnd)
         {
-            var bytesRead = _stream.Read(bufferSpan[_bufferedEnd..]);
-            _bufferedEnd += bytesRead;
-            _hasReadToTheEnd = bytesRead == 0;
-            return;
-        }
+            var bufferSpan = BufferSpan;
+            if (_bufferedEnd < _buffer.Length)
+            {
+                var bytesRead = _stream.Read(bufferSpan[_bufferedEnd..]);
+                _bufferedEnd += bytesRead;
+                _hasReadToTheEnd = bytesRead == 0;
+                return;
+            }
 
-        if (_bufferedStart > 0 && _lockedStart == -1 || _lockedStart > 0)
-        {
-            var start = _lockedStart == -1 ? _bufferedStart : _lockedStart;
-            bufferSpan[start..].CopyTo(bufferSpan);
-            _bufferedEnd -= start;
-            _bufferedStart -= start;
-            if (_lockedStart > 0)
-                _lockedStart = 0;
-            ReadToBuffer();
-            return;
+            if (_bufferedStart > 0)
+            {
+                var dataSpan = bufferSpan[_bufferedStart..];
+                dataSpan.CopyTo(bufferSpan);
+                _bufferedStart = 0;
+                _bufferedEnd = dataSpan.Length;
+            }
+            else
+            {
+                var newBuffer = ArrayPool<byte>.Shared.Rent(_buffer.Length + 1);
+                bufferSpan.CopyTo(newBuffer);
+                ArrayPool<byte>.Shared.Return(_buffer);
+                _buffer = newBuffer;
+            }
         }
-
-        var newBuffer = ArrayPool<byte>.Shared.Rent(_buffer.Length + 1);
-        bufferSpan.CopyTo(newBuffer);
-        ArrayPool<byte>.Shared.Return(_buffer);
-        _buffer = newBuffer;
-        ReadToBuffer();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void EnsureReadToBuffer()
+    private int FindStart(ReadOnlySpan<byte> separators, bool fragmentOrSeparators, int startIndex)
     {
         if (_bufferedStart == _bufferedEnd)
             ReadToBuffer();
+        do
+        {
+            var span = DataSpan[startIndex..];
+            var start = fragmentOrSeparators
+                ? span.IndexOfAnyExcept(separators)
+                : span.IndexOfAny(separators);
+            if (start >= 0)
+                return start + startIndex;
+            if (_hasReadToTheEnd)
+                return -1;
+            startIndex += span.Length;
+            ReadToBuffer();
+        } while (true);
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private int FindFragmentStart(ReadOnlySpan<byte> separators, int startIndex = 0) => FindStart(separators, true, startIndex);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private int FindSeparatorsStart(ReadOnlySpan<byte> separators, int startIndex = 0) => FindStart(separators, false, startIndex);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Skip(int count)
     {
         _bufferedStart += count;
-        if (_bufferedStart == _bufferedEnd && _lockedStart == -1)
-        {
-            _bufferedStart = 0;
-            _bufferedEnd = 0;
-        }
+        if (_bufferedStart == _bufferedEnd)
+            SkipAll();
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void SkipAll()
+    {
+        _bufferedStart = 0;
+        _bufferedEnd = 0;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SkipSeparators(scoped ReadOnlySpan<byte> separators)
+    private void SkipSeparators(ReadOnlySpan<byte> separators)
     {
-        EnsureReadToBuffer();
-        while (!EndOfStream && separators.IndexOf(DataSpan[0]) >= 0)
-        {
-            Skip(1);
-            EnsureReadToBuffer();
-        }
+        var fragmentStart = FindFragmentStart(separators);
+        if (fragmentStart < 0)
+            SkipAll();
+        else
+            Skip(fragmentStart);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -111,27 +129,14 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SkipFragment(scoped ReadOnlySpan<byte> separators)
     {
-        if (EndOfStream)
-            return;
-
-        EnsureReadToBuffer();
-
-        while (!_hasReadToTheEnd)
+        var separatorsStart = FindSeparatorsStart(separators);
+        if (separatorsStart < 0)
+            SkipAll();
+        else
         {
-
-            var separatorPos = DataSpan.IndexOfAny(separators);
-            if (separatorPos >= 0)
-            {
-                Skip(separatorPos);
-                break;
-            }
-
-            Skip(Math.Max(_bufferedEnd - _bufferedStart, 0));
-            ReadToBuffer();
-        }
-
-        if (!EndOfStream)
+            Skip(separatorsStart);
             SkipSeparators(separators);
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -152,32 +157,21 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
         if (EndOfStream)
             return default;
 
-        EnsureReadToBuffer();
-
-        var separatorPos = -1;
-        while (!_hasReadToTheEnd)
-        {
-            separatorPos = DataSpan.IndexOfAny(separators);
-            if (separatorPos >= 0)
-                break;
-            ReadToBuffer();
-        }
-
-        if (separatorPos < 0)
+        var separatorsStart = FindSeparatorsStart(separators);
+        if (separatorsStart < 0)
         {
             var result = DataSpan;
-            Skip(result.Length);
+            SkipAll();
             return result;
         }
         else
         {
-            _lockedStart = _bufferedStart;
-            Skip(separatorPos + 1);
-            SkipSeparators(separators);
-            var result = BufferSpan.Slice(_lockedStart, separatorPos);
-            _lockedStart = -1;
-            if (_bufferedStart == _bufferedEnd && _bufferedStart != 0)
-                _bufferedStart = _bufferedEnd = 0;
+            var fragmentStart = FindFragmentStart(separators, separatorsStart);
+            var result = DataSpan[..separatorsStart];
+            if (fragmentStart < 0)
+                SkipAll();
+            else
+                Skip(fragmentStart);
             return result;
         }
     }
@@ -212,7 +206,7 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
         while (!_hasReadToTheEnd)
             ReadToBuffer();
         var result = DataSpan;
-        Skip(result.Length);
+        SkipAll();
         return result;
     }
 
