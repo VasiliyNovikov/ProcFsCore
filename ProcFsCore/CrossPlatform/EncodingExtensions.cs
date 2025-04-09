@@ -1,7 +1,7 @@
 #if NETSTANDARD2_0
 namespace System.Text;
 
-public static class EncodingExtensions
+internal static class EncodingExtensions
 {
     public static unsafe string GetString(this Encoding encoding, ReadOnlySpan<byte> bytes)
     {

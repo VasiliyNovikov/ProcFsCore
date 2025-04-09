@@ -4,10 +4,10 @@ using System.Runtime.CompilerServices;
 
 namespace ProcFsCore;
 
-internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
+internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : IDisposable
 {
-    private static ReadOnlySpan<byte> WhiteSpaces => " \n\t\v\f\r"u8;
-    private static ReadOnlySpan<byte> LineSeparators => "\n\r"u8;
+    private static readonly SearchValues<byte> WhiteSpaces = SearchValues.Create(" \t\n"u8);
+    private static readonly SearchValues<byte> LineSeparators = SearchValues.Create("\n"u8);
 
     private readonly LightFileStream _stream = LightFileStream.OpenRead(fileName);
 
@@ -73,7 +73,7 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int FindStart(ReadOnlySpan<byte> separators, bool fragmentOrSeparators, int startIndex)
+    private int FindStart(SearchValues<byte> separators, bool fragmentOrSeparators, int startIndex)
     {
         if (_bufferedStart == _bufferedEnd)
             ReadToBuffer();
@@ -93,10 +93,10 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int FindFragmentStart(ReadOnlySpan<byte> separators, int startIndex = 0) => FindStart(separators, true, startIndex);
+    private int FindFragmentStart(SearchValues<byte> separators, int startIndex = 0) => FindStart(separators, true, startIndex);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int FindSeparatorsStart(ReadOnlySpan<byte> separators, int startIndex = 0) => FindStart(separators, false, startIndex);
+    private int FindSeparatorsStart(SearchValues<byte> separators, int startIndex = 0) => FindStart(separators, false, startIndex);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Skip(int count)
@@ -114,7 +114,7 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void SkipSeparators(ReadOnlySpan<byte> separators)
+    private void SkipSeparators(SearchValues<byte> separators)
     {
         var fragmentStart = FindFragmentStart(separators);
         if (fragmentStart < 0)
@@ -124,10 +124,7 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SkipSeparator(char separator) => SkipSeparators([(byte) separator]);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SkipFragment(scoped ReadOnlySpan<byte> separators)
+    public void SkipWord(SearchValues<byte> separators)
     {
         var separatorsStart = FindSeparatorsStart(separators);
         if (separatorsStart < 0)
@@ -140,19 +137,16 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SkipFragment(char separator) => SkipFragment([(byte) separator]);
+    public void SkipWord() => SkipWord(WhiteSpaces);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SkipLine() => SkipFragment(LineSeparators);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SkipWord() => SkipFragment(WhiteSpaces);
+    public void SkipLine() => SkipWord(LineSeparators);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SkipWhiteSpaces() => SkipSeparators(WhiteSpaces);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<byte> ReadFragment(scoped ReadOnlySpan<byte> separators)
+    public ReadOnlySpan<byte> ReadWord(SearchValues<byte> separators)
     {
         if (EndOfStream)
             return default;
@@ -177,13 +171,10 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0)
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<byte> ReadFragment(char separator) => ReadFragment([(byte) separator]);
+    public ReadOnlySpan<byte> ReadLine() => ReadWord(LineSeparators);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<byte> ReadLine() => ReadFragment(LineSeparators);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<byte> ReadWord() => ReadFragment(WhiteSpaces);
+    public ReadOnlySpan<byte> ReadWord() => ReadWord(WhiteSpaces);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string ReadStringWord() => ReadWord().ToAsciiString();

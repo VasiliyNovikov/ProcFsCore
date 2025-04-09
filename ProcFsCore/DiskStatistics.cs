@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace ProcFsCore;
 
@@ -31,32 +32,25 @@ public readonly struct DiskStatistics
         // http://man7.org/linux/man-pages/man5/proc.5.html
         // https://www.kernel.org/doc/Documentation/iostats.txt
         var diskStatsPath = instance.PathFor("diskstats");
-        var statsReader = new AsciiFileReader(diskStatsPath, 1024);
-        try
+        using var statsReader = new AsciiFileReader(diskStatsPath, 1024);
+        while (!statsReader.EndOfStream)
         {
-            while (!statsReader.EndOfStream)
-            {
-                statsReader.SkipWhiteSpaces();
-                statsReader.SkipWord();
-                statsReader.SkipWord();
+            statsReader.SkipWhiteSpaces();
+            statsReader.SkipWord();
+            statsReader.SkipWord();
 
-                var deviceName = statsReader.ReadWord();
+            var deviceName = statsReader.ReadWord();
 
-                var reads = Operation.Read(ref statsReader);
-                var writes = Operation.Read(ref statsReader);
+            var reads = Operation.Read(ref Unsafe.AsRef(in statsReader));
+            var writes = Operation.Read(ref Unsafe.AsRef(in statsReader));
 
-                statsReader.SkipWord();
-                var totalTime = statsReader.ReadInt64() / 1_000_000.0;
-                var totalWeightedTime = statsReader.ReadInt64() / 1_000_000.0;
+            statsReader.SkipWord();
+            var totalTime = statsReader.ReadInt64() / 1_000_000.0;
+            var totalWeightedTime = statsReader.ReadInt64() / 1_000_000.0;
 
-                yield return new DiskStatistics(deviceName.ToAsciiString(), reads, writes, totalTime, totalWeightedTime);
+            yield return new DiskStatistics(deviceName.ToAsciiString(), reads, writes, totalTime, totalWeightedTime);
 
-                statsReader.SkipLine();
-            }
-        }
-        finally
-        {
-            statsReader.Dispose();
+            statsReader.SkipLine();
         }
     }
 

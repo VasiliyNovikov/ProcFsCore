@@ -1,9 +1,12 @@
+using System.Buffers;
 using System.Net;
 
 namespace ProcFsCore;
 
 public readonly struct NetEndPoint
 {
+    private static readonly SearchValues<byte> AddressPortSeparator = SearchValues.Create(":"u8);
+
     public NetAddress Address { get; }
     public int Port { get; }
     public bool IsEmpty => Address.IsEmpty && Port == 0;
@@ -16,7 +19,7 @@ public readonly struct NetEndPoint
 
     internal static NetEndPoint Read(ref AsciiFileReader statReader)
     {
-        return new NetEndPoint(NetAddress.Parse(statReader.ReadFragment(':'), NetAddressFormat.Hex), statReader.ReadInt32('x'));
+        return new NetEndPoint(NetAddress.Parse(statReader.ReadWord(AddressPortSeparator), NetAddressFormat.Hex), statReader.ReadInt32('x'));
     }
 
     public override string? ToString() => ((IPEndPoint?)this)?.ToString();

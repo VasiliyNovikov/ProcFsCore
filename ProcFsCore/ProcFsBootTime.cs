@@ -39,24 +39,17 @@ public class ProcFsBootTime
 
     private static DateTime GetStatValueUtc(string statPath)
     {
-        var statReader = new AsciiFileReader(statPath, 4096);
-        try
+        using var statReader = new AsciiFileReader(statPath, 4096);
+        while (!statReader.EndOfStream)
         {
-            while (!statReader.EndOfStream)
+            if (statReader.ReadWord().SequenceEqual(BtimeStr))
             {
-                if (statReader.ReadWord().SequenceEqual(BtimeStr))
-                {
-                    var bootTimeSeconds = statReader.ReadInt64();
-                    return CrossPlatformDateTime.UnixEpoch + TimeSpan.FromSeconds(bootTimeSeconds);
-                }
-                statReader.SkipLine();
+                var bootTimeSeconds = statReader.ReadInt64();
+                return CrossPlatformDateTime.UnixEpoch + TimeSpan.FromSeconds(bootTimeSeconds);
             }
-            throw new NotSupportedException();
+            statReader.SkipLine();
         }
-        finally
-        {
-            statReader.Dispose();
-        }
+        throw new NotSupportedException();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

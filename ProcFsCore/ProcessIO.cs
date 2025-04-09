@@ -1,9 +1,11 @@
-using System;
+using System.Buffers;
 
 namespace ProcFsCore;
 
 public readonly struct ProcessIO
 {
+    private static readonly SearchValues<byte> StatNameSeparators = SearchValues.Create(": "u8);
+
     public readonly Direction Read;
     public readonly Direction Write;
         
@@ -13,32 +15,24 @@ public readonly struct ProcessIO
         Write = write;
     }
 
-    private static ReadOnlySpan<byte> StatNameSeparators => ": "u8;
     internal static ProcessIO Get(ProcFs instance, int pid)
     {
-        var statReader = new AsciiFileReader(instance.PathFor($"{pid}/io"), 256);
-        try
-        {
-            statReader.SkipFragment(StatNameSeparators);
-            var readCharacters = statReader.ReadInt64();
-            statReader.SkipFragment(StatNameSeparators);
-            var writeCharacters = statReader.ReadInt64();
-            statReader.SkipFragment(StatNameSeparators);
-            var readSysCalls = statReader.ReadInt64();
-            statReader.SkipFragment(StatNameSeparators);
-            var writeSysCalls = statReader.ReadInt64();
-            statReader.SkipFragment(StatNameSeparators);
-            var readBytes = statReader.ReadInt64();
-            statReader.SkipFragment(StatNameSeparators);
-            var writeBytes = statReader.ReadInt64();
+        using var statReader = new AsciiFileReader(instance.PathFor($"{pid}/io"), 256);
+        statReader.SkipWord(StatNameSeparators);
+        var readCharacters = statReader.ReadInt64();
+        statReader.SkipWord(StatNameSeparators);
+        var writeCharacters = statReader.ReadInt64();
+        statReader.SkipWord(StatNameSeparators);
+        var readSysCalls = statReader.ReadInt64();
+        statReader.SkipWord(StatNameSeparators);
+        var writeSysCalls = statReader.ReadInt64();
+        statReader.SkipWord(StatNameSeparators);
+        var readBytes = statReader.ReadInt64();
+        statReader.SkipWord(StatNameSeparators);
+        var writeBytes = statReader.ReadInt64();
                 
-            return new ProcessIO(new Direction(readCharacters, readBytes, readSysCalls),
-                new Direction(writeCharacters, writeBytes, writeSysCalls));
-        }
-        finally
-        {
-            statReader.Dispose();
-        }
+        return new ProcessIO(new Direction(readCharacters, readBytes, readSysCalls),
+                             new Direction(writeCharacters, writeBytes, writeSysCalls));
     }
 
     public readonly struct Direction(long characters, long bytes, long sysCalls)

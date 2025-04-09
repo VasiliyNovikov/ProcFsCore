@@ -1,6 +1,6 @@
 namespace System.Runtime.InteropServices;
 
-public static class CrossPlatformMemoryMarshal
+internal static class CrossPlatformMemoryMarshal
 {
     public static Span<byte> CreateSpan(ref byte data, int length)
     {
