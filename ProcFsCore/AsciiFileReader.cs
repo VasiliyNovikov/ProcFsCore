@@ -6,7 +6,7 @@ namespace ProcFsCore;
 
 internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : IDisposable
 {
-    private static readonly SearchValues<byte> WhiteSpaces = SearchValues.Create(" \t\n"u8);
+    private static readonly SearchValues<byte> WhiteSpaces = SearchValues.Create(" \n"u8);
     private static readonly SearchValues<byte> LineSeparators = SearchValues.Create("\n"u8);
 
     private readonly LightFileStream _stream = LightFileStream.OpenRead(fileName);
