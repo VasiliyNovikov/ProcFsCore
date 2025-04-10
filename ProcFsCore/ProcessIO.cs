@@ -1,11 +1,7 @@
-using System.Buffers;
-
 namespace ProcFsCore;
 
 public readonly struct ProcessIO
 {
-    private static readonly SearchValues<byte> StatNameSeparators = SearchValues.Create(": "u8);
-
     public readonly Direction Read;
     public readonly Direction Write;
         
@@ -18,17 +14,17 @@ public readonly struct ProcessIO
     internal static ProcessIO Get(ProcFs instance, int pid)
     {
         using var statReader = new AsciiFileReader(instance.PathFor($"{pid}/io"), 256);
-        statReader.SkipWord(StatNameSeparators);
+        statReader.SkipWord();
         var readCharacters = statReader.ReadInt64();
-        statReader.SkipWord(StatNameSeparators);
+        statReader.SkipWord();
         var writeCharacters = statReader.ReadInt64();
-        statReader.SkipWord(StatNameSeparators);
+        statReader.SkipWord();
         var readSysCalls = statReader.ReadInt64();
-        statReader.SkipWord(StatNameSeparators);
+        statReader.SkipWord();
         var writeSysCalls = statReader.ReadInt64();
-        statReader.SkipWord(StatNameSeparators);
+        statReader.SkipWord();
         var readBytes = statReader.ReadInt64();
-        statReader.SkipWord(StatNameSeparators);
+        statReader.SkipWord();
         var writeBytes = statReader.ReadInt64();
                 
         return new ProcessIO(new Direction(readCharacters, readBytes, readSysCalls),
