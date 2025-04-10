@@ -7,7 +7,7 @@ namespace ProcFsCore;
 public readonly struct NetStatistics
 {
     private const string NetDevRelativePath = "net/dev";
-    private static readonly SearchValues<byte> IfaceColumnHeaderSeparators = SearchValues.Create("| \t"u8);
+    private static readonly SearchValues<byte> IfaceColumnHeaderSeparators = SearchValues.Create("|"u8);
 
     public string InterfaceName { get; }
     public readonly Direction Receive;
@@ -24,7 +24,6 @@ public readonly struct NetStatistics
     {
         using var statReader = new AsciiFileReader(instance.PathFor(NetDevRelativePath), 512);
         statReader.SkipLine();
-        statReader.SkipWhiteSpaces();
         statReader.SkipWord(IfaceColumnHeaderSeparators);
         var receiveColumnCount = 0;
         while (true)
