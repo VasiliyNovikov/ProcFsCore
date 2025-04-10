@@ -1,5 +1,5 @@
-using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace ProcFsCore;
 
@@ -24,51 +24,30 @@ public readonly struct DiskStatistics
         TotalWeightedTime = totalWeightedTime;
     }
 
-    private static ReadOnlySpan<byte> LoopDeviceStart => "loop"u8;
-
     internal static IEnumerable<DiskStatistics> GetAll(ProcFs instance)
     {
         // http://man7.org/linux/man-pages/man5/proc.5.html
         // https://www.kernel.org/doc/Documentation/iostats.txt
         var diskStatsPath = instance.PathFor("diskstats");
-        var statsReader = new AsciiFileReader(diskStatsPath, 1024);
-        try
+        using var statsReader = new AsciiFileReader(diskStatsPath, 1024);
+        while (!statsReader.EndOfStream)
         {
-            while (!statsReader.EndOfStream)
-            {
-                var statLine = statsReader.ReadLine();
-                var statReader = new AsciiSpanReader(statLine);
-                try
-                {
-                    statReader.SkipWhiteSpaces();
-                    statReader.SkipWord();
-                    statReader.SkipWord();
+            statsReader.SkipWhiteSpaces();
+            statsReader.SkipWord();
+            statsReader.SkipWord();
 
-                    var deviceName = statReader.ReadWord();
+            var deviceName = statsReader.ReadWord();
 
-                    var reads = Operation.Parse(ref statReader);
-                    var writes = Operation.Parse(ref statReader);
+            var reads = Operation.Read(statsReader);
+            var writes = Operation.Read(statsReader);
 
-                    if (deviceName.StartsWith(LoopDeviceStart) &&
-                        reads is { Count: 0, Merged: 0, Bytes: 0, Time: 0 } &&
-                        writes is { Count: 0, Merged: 0, Bytes: 0, Time: 0 })
-                        continue;
+            statsReader.SkipWord();
+            var totalTime = statsReader.ReadInt64() / 1_000_000.0;
+            var totalWeightedTime = statsReader.ReadInt64() / 1_000_000.0;
 
-                    statReader.SkipWord();
-                    var totalTime = statReader.ReadInt64() / 1_000_000.0;
-                    var totalWeightedTime = statReader.ReadInt64() / 1_000_000.0;
+            yield return new DiskStatistics(deviceName.ToAsciiString(), reads, writes, totalTime, totalWeightedTime);
 
-                    yield return new DiskStatistics(deviceName.ToAsciiString(), reads, writes, totalTime, totalWeightedTime);
-                }
-                finally
-                {
-                    statReader.Dispose();
-                }
-            }
-        }
-        finally
-        {
-            statsReader.Dispose();
+            statsReader.SkipLine();
         }
     }
 
@@ -87,13 +66,13 @@ public readonly struct DiskStatistics
             Time = time;
         }
 
-        internal static Operation Parse<TReader>(ref TReader reader)
-            where TReader : struct, IAsciiReader
+        internal static Operation Read(in AsciiFileReader reader)
         {
-            var count = reader.ReadInt64();
-            var merged = reader.ReadInt64();
-            var sectors = reader.ReadInt64();
-            var time = reader.ReadInt64() / 1_000_000.0;
+            ref var readerRef = ref Unsafe.AsRef(in reader);
+            var count = readerRef.ReadInt64();
+            var merged = readerRef.ReadInt64();
+            var sectors = readerRef.ReadInt64();
+            var time = readerRef.ReadInt64() / 1_000_000.0;
             return new Operation(count, merged, sectors * SectorSize, time);
         }
     }

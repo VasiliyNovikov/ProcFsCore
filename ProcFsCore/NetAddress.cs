@@ -14,7 +14,7 @@ public unsafe struct NetAddress
 #pragma warning restore 649
     private readonly int _length;
 
-    private Span<byte> Data => CrossPlatformMemoryMarshal.CreateSpan(ref _data[0], _length);
+    private Span<byte> Data => MemoryMarshalExtensions.CreateSpan(ref _data[0], _length);
 
     public NetAddressVersion Version => _length == 4 ? NetAddressVersion.IPv4 : NetAddressVersion.IPv6;
 
@@ -54,19 +54,12 @@ public unsafe struct NetAddress
             }
             case NetAddressFormat.Human:
             {
-#if NETSTANDARD2_0
-                var addressStr = AsciiExtensions.Encoding.GetString(addressString);
-                var frameworkAddress = IPAddress.Parse(addressStr);
-                var addressBytes = frameworkAddress.GetAddressBytes();
-                return new NetAddress(addressBytes);
-#else
                 Span<char> addressStr = stackalloc char[64];
-                AsciiExtensions.Encoding.GetChars(addressString, addressStr);
-                var frameworkAddress = IPAddress.Parse(addressStr[..addressString.Length]);
+                var addressStrLen = AsciiExtensions.Encoding.GetChars(addressString, addressStr);
+                var frameworkAddress = IPAddressExtensions.Parse(addressStr[..addressStrLen]);
                 Span<byte> addressBytes = stackalloc byte[MaxAddressLength];
-                frameworkAddress.TryWriteBytes(addressBytes, out var addressLength);
-                return new NetAddress(addressBytes[..addressLength]);
-#endif
+                frameworkAddress.TryWriteBytes(addressBytes, out var addressBytesLen);
+                return new NetAddress(addressBytes[..addressBytesLen]);
             }
             default:
                 throw new ArgumentOutOfRangeException(nameof(format), format, null);
@@ -75,10 +68,5 @@ public unsafe struct NetAddress
 
     public override string ToString() => ((IPAddress)this).ToString();
 
-    public static implicit operator IPAddress(in NetAddress address) =>
-#if NETSTANDARD2_0
-        new(address.Data.ToArray());
-#else
-        new(address.Data);
-#endif
+    public static implicit operator IPAddress(in NetAddress address) => IPAddressExtensions.FromBytes(address.Data);
 }

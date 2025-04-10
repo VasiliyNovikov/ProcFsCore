@@ -4,15 +4,17 @@ using System.Runtime.CompilerServices;
 
 namespace ProcFsCore;
 
-internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : IAsciiReader
+internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : IDisposable
 {
+    private static readonly SearchValues<byte> WhiteSpaces = SearchValues.Create(" \n"u8);
+    private static readonly SearchValues<byte> LineSeparators = SearchValues.Create("\n"u8);
+
     private readonly LightFileStream _stream = LightFileStream.OpenRead(fileName);
 
     private byte[] _buffer = ArrayPool<byte>.Shared.Rent(initialBufferSize);
-    private int _lockedStart = -1;
     private int _bufferedStart = 0;
     private int _bufferedEnd = 0;
-    private bool _endOfStream = false;
+    private bool _hasReadToTheEnd = false;
 
     private Span<byte> BufferSpan
     {
@@ -20,10 +22,16 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : IA
         get => _buffer;
     }
 
+    private Span<byte> DataSpan
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _buffer.AsSpan(_bufferedStart, _bufferedEnd - _bufferedStart);
+    }
+
     public bool EndOfStream
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _endOfStream && _bufferedStart == _bufferedEnd;
+        get => _hasReadToTheEnd && _bufferedStart == _bufferedEnd;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -33,155 +41,217 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : IA
         _stream.Dispose();
     }
 
+    /// <summary>
+    /// Reads more data to buffer if any
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ReadToBuffer()
     {
-        if (_endOfStream)
-            return;
-
-        var bufferSpan = BufferSpan;
-        if (_bufferedEnd < _buffer.Length)
+        while (!_hasReadToTheEnd)
         {
-            var bytesRead = _stream.Read(bufferSpan[_bufferedEnd..]);
-            _bufferedEnd += bytesRead;
-            _endOfStream = bytesRead == 0;
-            return;
-        }
+            var bufferSpan = BufferSpan;
+            if (_bufferedEnd < _buffer.Length)
+            {
+                var bytesRead = _stream.Read(bufferSpan[_bufferedEnd..]);
+                _bufferedEnd += bytesRead;
+                _hasReadToTheEnd = bytesRead == 0;
+                return;
+            }
 
-        if (_bufferedStart > 0 && _lockedStart == -1 || _lockedStart > 0)
-        {
-            var start = _lockedStart == -1 ? _bufferedStart : _lockedStart;
-            bufferSpan[start..].CopyTo(bufferSpan);
-            _bufferedEnd -= start;
-            _bufferedStart -= start;
-            if (_lockedStart > 0)
-                _lockedStart = 0;
-            ReadToBuffer();
-            return;
-        }
+            if (_bufferedStart > 0)
+            {
+                var dataSpan = bufferSpan[_bufferedStart..];
+                dataSpan.CopyTo(bufferSpan);
+                _bufferedStart = 0;
+                _bufferedEnd = dataSpan.Length;
+                return;
+            }
 
-        var newBuffer = ArrayPool<byte>.Shared.Rent(_buffer.Length + 1);
-        bufferSpan.CopyTo(newBuffer);
-        ArrayPool<byte>.Shared.Return(_buffer);
-        _buffer = newBuffer;
-        ReadToBuffer();
+            var newBuffer = ArrayPool<byte>.Shared.Rent(_buffer.Length + 1);
+            bufferSpan.CopyTo(newBuffer);
+            ArrayPool<byte>.Shared.Return(_buffer);
+            _buffer = newBuffer;
+        }
     }
 
+    /// <summary>
+    /// Finds starting (from current + startIndex) position of word or separators.
+    /// Reads data into buffer if needed
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void EnsureReadToBuffer()
+    private int FindStart(SearchValues<byte> separators, bool wordOrSeparators, int startIndex = 0)
     {
         if (_bufferedStart == _bufferedEnd)
             ReadToBuffer();
+        do
+        {
+            var span = DataSpan[startIndex..];
+            var start = wordOrSeparators
+                ? span.IndexOfAnyExcept(separators)
+                : span.IndexOfAny(separators);
+            if (start >= 0)
+                return startIndex + start;
+            if (_hasReadToTheEnd)
+                return -1;
+            startIndex += span.Length;
+            ReadToBuffer();
+        } while (true);
     }
 
+    /// <summary>
+    /// Finds starting (from current + startIndex) position of word.
+    /// Reads data into buffer if needed
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void LockBuffer() => _lockedStart = _bufferedStart;
+    private int FindWordStart(SearchValues<byte> separators, int startIndex = 0) => FindStart(separators, true, startIndex);
 
+    /// <summary>
+    /// Finds starting (from current) position of separators.
+    /// Reads data into buffer if needed
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void UnlockBuffer()
+    private int FindSeparatorsStart(SearchValues<byte> separators) => FindStart(separators, false);
+
+    /// <summary>
+    /// Skips everything currently in the buffer
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void SkipAll()
     {
-        _lockedStart = -1;
-        if (_bufferedStart == _bufferedEnd && _bufferedStart != 0)
-            _bufferedStart = _bufferedEnd = 0;
+        _bufferedStart = 0;
+        _bufferedEnd = 0;
     }
 
+    /// <summary>
+    /// Skips count number of bytes in teh buffer
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ConsumeBuffer(int count)
+    private void Skip(int count)
     {
         _bufferedStart += count;
-        if (_bufferedStart == _bufferedEnd && _lockedStart == -1)
-        {
-            _bufferedStart = 0;
-            _bufferedEnd = 0;
-        }
+        if (_bufferedStart == _bufferedEnd)
+            SkipAll();
     }
-        
+
+    /// <summary>
+    /// Skip word or separators 
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SkipSeparators(scoped ReadOnlySpan<byte> separators)
+    private void Skip(SearchValues<byte> separators, bool wordOrSeparators)
     {
-        EnsureReadToBuffer();
-        while (!EndOfStream && separators.IndexOf(BufferSpan[_bufferedStart]) >= 0)
-        {
-            ConsumeBuffer(1);
-            EnsureReadToBuffer();
-        }
+        var start = FindStart(separators, !wordOrSeparators);
+        if (start < 0)
+            SkipAll();
+        else
+            Skip(start);
     }
-        
+
+    /// <summary>
+    /// Skips separators.
+    /// Position is moved to the beginning of the word or to the end
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SkipFragment(scoped ReadOnlySpan<byte> separators, bool isSingleString = false)
+    private void SkipSeparators(SearchValues<byte> separators) => Skip(separators, false);
+
+    /// <summary>
+    /// Skips word and separators after the word.
+    /// Position is moved to the beginning of the next word or to the end
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SkipWord(SearchValues<byte> separators)
     {
-        if (EndOfStream)
-            return;
-
-        var consumePadding = isSingleString ? separators.Length : 0;
-        EnsureReadToBuffer();
-
-        while (!_endOfStream)
-        {
-
-            var separatorPos = isSingleString
-                ? BufferSpan.Slice(_bufferedStart, _bufferedEnd - _bufferedStart).IndexOf(separators)
-                : BufferSpan.Slice(_bufferedStart, _bufferedEnd - _bufferedStart).IndexOfAny(separators);
-            if (separatorPos >= 0)
-            {
-                ConsumeBuffer(separatorPos);
-                break;
-            }
-
-            ConsumeBuffer(Math.Max(_bufferedEnd - _bufferedStart - consumePadding, 0));
-            ReadToBuffer();
-        }
-
-        if (!EndOfStream)
-            SkipSeparators(separators);
+        Skip(separators, true);
+        SkipSeparators(separators);
     }
-        
+
+    /// <summary>
+    /// Skips word and whitespaces after the word.
+    /// Position is moved to the beginning of the next word or to the end
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<byte> ReadFragment(scoped ReadOnlySpan<byte> separators)
+    public void SkipWord() => SkipWord(WhiteSpaces);
+
+    /// <summary>
+    /// Skips line and line break characters after the line.
+    /// Position is moved to the beginning of the next line or to the end
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SkipLine() => SkipWord(LineSeparators);
+
+    /// <summary>
+    /// Skips whitespaces.
+    /// Position is moved to the beginning of the word or to the end
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SkipWhiteSpaces() => SkipSeparators(WhiteSpaces);
+
+    /// <summary>
+    /// Reads word and skips separators after the word.
+    /// Position is moved to the beginning of the next word or to the end
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ReadOnlySpan<byte> ReadWord(SearchValues<byte> separators)
     {
         if (EndOfStream)
             return default;
 
-        EnsureReadToBuffer();
-
-        var separatorPos = -1;
-        while (!_endOfStream)
+        var separatorsStart = FindSeparatorsStart(separators);
+        if (separatorsStart < 0)
         {
-            separatorPos = BufferSpan.Slice(_bufferedStart, _bufferedEnd - _bufferedStart).IndexOfAny(separators);
-            if (separatorPos >= 0)
-                break;
-            ReadToBuffer();
-        }
-
-        if (separatorPos < 0)
-        {
-            var resultLength = _bufferedEnd - _bufferedStart;
-            LockBuffer();
-            ConsumeBuffer(_bufferedEnd - _bufferedStart);
-            var result = BufferSpan.Slice(_lockedStart, resultLength);
-            UnlockBuffer();
+            var result = DataSpan;
+            SkipAll();
             return result;
         }
         else
         {
-            LockBuffer();
-            ConsumeBuffer(separatorPos + 1);
-            SkipSeparators(separators);
-            var result = BufferSpan.Slice(_lockedStart, separatorPos);
-            UnlockBuffer();
+            var nextWordStart = FindWordStart(separators, separatorsStart);
+            var result = DataSpan[..separatorsStart]; // DataSpan calculation is altered by Skip/SkipAll so need to get it before
+            if (nextWordStart < 0)
+                SkipAll();
+            else
+                Skip(nextWordStart);
             return result;
         }
     }
-        
+
+    /// <summary>
+    /// Reads word and skips whitespaces after the word.
+    /// Position is moved to the beginning of the next word or to the end
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ReadOnlySpan<byte> ReadWord() => ReadWord(WhiteSpaces);
+
+    /// <summary>
+    /// Reads line and skips line break characters after the line.
+    /// Position is moved to the beginning of the next word or to the end
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ReadOnlySpan<byte> ReadLine() => ReadWord(LineSeparators);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public string ReadStringWord() => ReadWord().ToAsciiString();
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private T Read<T>(char format = '\0') => AsciiParser.Parse<T>(ReadWord(), format);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public short ReadInt16(char format = '\0') => Read<short>(format);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int ReadInt32(char format = '\0') => Read<int>(format);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public long ReadInt64(char format = '\0') => Read<long>(format);
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> ReadToEnd()
     {
-        while (!_endOfStream)
+        while (!_hasReadToTheEnd)
             ReadToBuffer();
-        var result = BufferSpan.Slice(_bufferedStart, _bufferedEnd);
-        ConsumeBuffer(_bufferedEnd - _bufferedStart);
+        var result = DataSpan;
+        SkipAll();
         return result;
     }
 
-    public override string ToString() => BufferSpan.Slice(_bufferedStart, _bufferedEnd - _bufferedStart).ToAsciiString();
+    public override string ToString() => DataSpan.ToAsciiString();
 }

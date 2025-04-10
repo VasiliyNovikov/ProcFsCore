@@ -14,7 +14,7 @@ public unsafe struct NetHardwareAddress
     private fixed byte _data[Length];
 #pragma warning restore 649
         
-    private Span<byte> Data => CrossPlatformMemoryMarshal.CreateSpan(ref _data[0], Length);
+    private Span<byte> Data => MemoryMarshalExtensions.CreateSpan(ref _data[0], Length);
 
     public NetHardwareAddress(ReadOnlySpan<byte> address)
     {

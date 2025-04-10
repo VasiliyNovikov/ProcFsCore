@@ -13,13 +13,10 @@ internal static class Native
 
     public static readonly int TicksPerSecond = SystemConfig(SystemConfigName.TicksPerSecond);
 
-#if NETSTANDARD2_0
     [DllImport(LibC, EntryPoint = "getpid")]
-    public static extern int GetPid();
-#else
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetPid() => Environment.ProcessId;
-#endif
+    private static extern int GetPid();
+    private static readonly int? CurrentProcessIdValue;
+    public static readonly int CurrentProcessId = CurrentProcessIdValue ??= GetPid();
 
     [DllImport(LibC, EntryPoint = "sysconf", SetLastError = true)]
     private static extern int SystemConfig(SystemConfigName name);

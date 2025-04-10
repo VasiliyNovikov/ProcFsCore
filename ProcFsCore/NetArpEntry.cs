@@ -21,26 +21,19 @@ public readonly struct NetArpEntry
 
     internal static IEnumerable<NetArpEntry> GetAll(ProcFs instance)
     {
-        var statReader = new AsciiFileReader(instance.PathFor("net/arp"), 1024);
-        try
+        using var statReader = new AsciiFileReader(instance.PathFor("net/arp"), 1024);
+        statReader.SkipLine();
+        while (!statReader.EndOfStream)
         {
-            statReader.SkipLine();
-            while (!statReader.EndOfStream)
-            {
-                statReader.SkipWhiteSpaces();
-                var address = NetAddress.Parse(statReader.ReadWord(), NetAddressFormat.Human);
-                statReader.SkipWord();
-                statReader.SkipWord();
-                var hardwareAddress = NetHardwareAddress.Parse(statReader.ReadWord());
-                var maskBytes = statReader.ReadWord();
-                var mask = maskBytes.Length == 1 && maskBytes[0] == '*' ? "*" : maskBytes.ToAsciiString();
-                var device = statReader.ReadStringWord();
-                yield return new NetArpEntry(address, hardwareAddress, mask, device);
-            }
-        }
-        finally
-        {
-            statReader.Dispose();
+            statReader.SkipWhiteSpaces();
+            var address = NetAddress.Parse(statReader.ReadWord(), NetAddressFormat.Human);
+            statReader.SkipWord();
+            statReader.SkipWord();
+            var hardwareAddress = NetHardwareAddress.Parse(statReader.ReadWord());
+            var maskBytes = statReader.ReadWord();
+            var mask = maskBytes.Length == 1 && maskBytes[0] == '*' ? "*" : maskBytes.ToAsciiString();
+            var device = statReader.ReadStringWord();
+            yield return new NetArpEntry(address, hardwareAddress, mask, device);
         }
     }
 }

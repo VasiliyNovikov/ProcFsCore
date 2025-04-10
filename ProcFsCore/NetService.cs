@@ -46,11 +46,7 @@ public readonly struct NetService
                 builder.Append(RemoteEndPoint);
             }
         }
-#if NETSTANDARD2_0
-        builder.Append($" {State}/{(int)State} {INode}");
-#else
         builder.Append(CultureInfo.InvariantCulture, $" {State}/{(int)State} {INode}");
-#endif
         return builder.ToString();
     }
 
@@ -65,50 +61,41 @@ public readonly struct NetService
     private static IEnumerable<NetService> GetAll(ProcFs instance, NetServiceType type, NetAddressVersion? addressVersion)
     {
         var serviceFile = NetServiceFiles[(int) type, (addressVersion ?? NetAddressVersion.IPv4) == NetAddressVersion.IPv4 ? 0 : 1];
-        var statReader = new AsciiFileReader(instance.PathFor(serviceFile), 256);
-        try
+        using var statReader = new AsciiFileReader(instance.PathFor(serviceFile), 256);
+        statReader.SkipLine();
+        while (!statReader.EndOfStream)
         {
-            statReader.SkipLine();
-            while (!statReader.EndOfStream)
+            statReader.SkipWhiteSpaces();
+            statReader.SkipWord();
+            if (type != NetServiceType.Unix)
             {
-                var lineReader = new AsciiSpanReader(statReader.ReadLine());
-                lineReader.SkipWhiteSpaces();
-                lineReader.SkipWord();
-                if (type != NetServiceType.Unix)
-                {
-                    var localEndPoint = NetEndPoint.Parse(ref lineReader);
-                    var remoteEndPoint = NetEndPoint.Parse(ref lineReader);
-                    var state = (NetServiceState)lineReader.ReadInt16('x');
+                var localEndPoint = NetEndPoint.Read(statReader);
+                var remoteEndPoint = NetEndPoint.Read(statReader);
+                var state = (NetServiceState)statReader.ReadInt16('x');
                         
-                    lineReader.SkipWord();
-                    lineReader.SkipWord();
-                    lineReader.SkipWord();
-                    lineReader.SkipWord();
-                    lineReader.SkipWord();
+                statReader.SkipWord();
+                statReader.SkipWord();
+                statReader.SkipWord();
+                statReader.SkipWord();
+                statReader.SkipWord();
 
-                    var iNode = lineReader.ReadInt32();
+                var iNode = statReader.ReadInt32();
                         
-                    lineReader.SkipLine();
-
-                    yield return new NetService(type, localEndPoint, remoteEndPoint, null, state, iNode);
-                }
-                else
-                {
-                    lineReader.SkipWord();
-                    lineReader.SkipWord();
-                    lineReader.SkipWord();
-                    lineReader.SkipWord();
-                    var state = (NetServiceState)lineReader.ReadInt16('x');
-                    var iNode = lineReader.ReadInt32();
-                    var path = lineReader.EndOfStream ? null : lineReader.ReadStringWord();
-
-                    yield return new NetService(type, default, default, path, state, iNode);
-                }
+                yield return new NetService(type, localEndPoint, remoteEndPoint, null, state, iNode);
             }
-        }
-        finally
-        {
-            statReader.Dispose();
+            else
+            {
+                statReader.SkipWord();
+                statReader.SkipWord();
+                statReader.SkipWord();
+                statReader.SkipWord();
+                var state = (NetServiceState)statReader.ReadInt16('x');
+                var iNode = statReader.ReadInt32();
+                var path = statReader.EndOfStream ? null : statReader.ReadStringWord();
+
+                yield return new NetService(type, default, default, path, state, iNode);
+            }
+            statReader.SkipLine();
         }
     }
 

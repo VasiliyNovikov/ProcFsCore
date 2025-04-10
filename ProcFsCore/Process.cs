@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 
@@ -6,6 +7,8 @@ namespace ProcFsCore;
 
 public struct Process
 {
+    private static readonly SearchValues<byte> ProcessNameEndSeparator = SearchValues.Create(")"u8);
+
     private readonly ProcFs _instance;
     private bool _initialized;
 
@@ -175,13 +178,12 @@ public struct Process
     {
         get
         {
-            if (_commandLine == null)
+            if (_commandLine is null)
             {
                 try
                 {
-                    var reader = new AsciiFileReader(_instance.PathFor($"{Pid}/cmdline"), 256);
-                    var cmdLineSpan = reader.ReadToEnd().Trim(0);
-                    _commandLine = cmdLineSpan.IsEmpty ? "" : cmdLineSpan.ToAsciiString();
+                    using var reader = new AsciiFileReader(_instance.PathFor($"{Pid}/cmdline"), 256);
+                    _commandLine = reader.ReadToEnd().Trim((byte)'\0').ToAsciiString();
                 }
                 catch (IOException)
                 {
@@ -235,89 +237,81 @@ public struct Process
         _commandLine = null;
         _startTimeUtc = null;
         var statPath = _instance.PathFor(Pid == 0 ? "self/stat" : $"{Pid}/stat"); // 0 - special case for current process of non-default instance
-        var statReader = new AsciiFileReader(statPath, 512);
-        try
-        {
-            // See http://man7.org/linux/man-pages/man5/proc.5.html /proc/[pid]/stat section
+        using var statReader = new AsciiFileReader(statPath, 512);
+        // See http://man7.org/linux/man-pages/man5/proc.5.html /proc/[pid]/stat section
 
-            // (1) pid
-            _pid = statReader.ReadInt32();
+        // (1) pid
+        _pid = statReader.ReadInt32();
 
-            // (2) name
-            statReader.SkipSeparator('(');
-            _name = statReader.ReadFragment(')').ToAsciiString();
-            statReader.SkipWhiteSpaces();
+        // (2) name
+        _name = statReader.ReadWord(ProcessNameEndSeparator)[1..].ToAsciiString();
+        statReader.SkipWhiteSpaces();
 
-            // (3) state
-            _state = GetProcessState((char) statReader.ReadWord()[0]);
+        // (3) state
+        _state = GetProcessState((char) statReader.ReadWord()[0]);
 
-            // (4) ppid
-            _parentPid = statReader.ReadInt32();
+        // (4) ppid
+        _parentPid = statReader.ReadInt32();
 
-            // (5) pgrp
-            _groupId = statReader.ReadInt32();
+        // (5) pgrp
+        _groupId = statReader.ReadInt32();
 
-            // (6) session
-            _sessionId = statReader.ReadInt32();
+        // (6) session
+        _sessionId = statReader.ReadInt32();
 
-            // (7) tty_nr
-            statReader.SkipWord();
+        // (7) tty_nr
+        statReader.SkipWord();
 
-            // (8) tpgid
-            statReader.SkipWord();
+        // (8) tpgid
+        statReader.SkipWord();
 
-            // (9) flags
-            statReader.SkipWord();
+        // (9) flags
+        statReader.SkipWord();
 
-            // (10) minflt
-            _minorFaults = statReader.ReadInt64();
+        // (10) minflt
+        _minorFaults = statReader.ReadInt64();
 
-            // (11) cminflt
-            statReader.SkipWord();
+        // (11) cminflt
+        statReader.SkipWord();
 
-            // (12) majflt
-            _majorFaults = statReader.ReadInt64();
+        // (12) majflt
+        _majorFaults = statReader.ReadInt64();
 
-            // (13) cmajflt
-            statReader.SkipWord();
+        // (13) cmajflt
+        statReader.SkipWord();
 
-            // (14) utime
-            _userProcessorTime = statReader.ReadInt64() / (double) Native.TicksPerSecond;
+        // (14) utime
+        _userProcessorTime = statReader.ReadInt64() / (double) Native.TicksPerSecond;
 
-            // (15) stime
-            _kernelProcessorTime = statReader.ReadInt64() / (double) Native.TicksPerSecond;
+        // (15) stime
+        _kernelProcessorTime = statReader.ReadInt64() / (double) Native.TicksPerSecond;
 
-            // (16) cutime
-            statReader.SkipWord();
+        // (16) cutime
+        statReader.SkipWord();
 
-            // (17) cstime
-            statReader.SkipWord();
+        // (17) cstime
+        statReader.SkipWord();
 
-            // (18) priority
-            _priority = statReader.ReadInt16();
+        // (18) priority
+        _priority = statReader.ReadInt16();
 
-            // (19) nice
-            _nice = statReader.ReadInt16();
+        // (19) nice
+        _nice = statReader.ReadInt16();
 
-            // (20) num_threads
-            _threadCount = statReader.ReadInt32();
+        // (20) num_threads
+        _threadCount = statReader.ReadInt32();
 
-            // (21) itrealvalue
-            statReader.SkipWord();
+        // (21) itrealvalue
+        statReader.SkipWord();
 
-            // (22) starttime
-            _startTimeTicks = statReader.ReadInt64();
+        // (22) starttime
+        _startTimeTicks = statReader.ReadInt64();
 
-            // (23) vsize
-            _virtualMemorySize = statReader.ReadInt64();
+        // (23) vsize
+        _virtualMemorySize = statReader.ReadInt64();
 
-            // (24) rss
-            _residentSetSize = statReader.ReadInt64() * Environment.SystemPageSize;
-        }
-        finally
-        {
-            statReader.Dispose();
-        }
+        // (24) rss
+        _residentSetSize = statReader.ReadInt64() * Environment.SystemPageSize;
 
         _initialized = true;
     }
