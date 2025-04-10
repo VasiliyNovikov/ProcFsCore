@@ -61,19 +61,18 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : ID
                 dataSpan.CopyTo(bufferSpan);
                 _bufferedStart = 0;
                 _bufferedEnd = dataSpan.Length;
+                return;
             }
-            else
-            {
-                var newBuffer = ArrayPool<byte>.Shared.Rent(_buffer.Length + 1);
-                bufferSpan.CopyTo(newBuffer);
-                ArrayPool<byte>.Shared.Return(_buffer);
-                _buffer = newBuffer;
-            }
+
+            var newBuffer = ArrayPool<byte>.Shared.Rent(_buffer.Length + 1);
+            bufferSpan.CopyTo(newBuffer);
+            ArrayPool<byte>.Shared.Return(_buffer);
+            _buffer = newBuffer;
         }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int FindStart(SearchValues<byte> separators, bool fragmentOrSeparators, int startIndex)
+    private int FindStart(SearchValues<byte> separators, bool fragmentOrSeparators, int startIndex = 0)
     {
         if (_bufferedStart == _bufferedEnd)
             ReadToBuffer();
@@ -84,7 +83,7 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : ID
                 ? span.IndexOfAnyExcept(separators)
                 : span.IndexOfAny(separators);
             if (start >= 0)
-                return start + startIndex;
+                return startIndex + start;
             if (_hasReadToTheEnd)
                 return -1;
             startIndex += span.Length;
@@ -96,16 +95,8 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : ID
     private int FindFragmentStart(SearchValues<byte> separators, int startIndex = 0) => FindStart(separators, true, startIndex);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int FindSeparatorsStart(SearchValues<byte> separators, int startIndex = 0) => FindStart(separators, false, startIndex);
+    private int FindSeparatorsStart(SearchValues<byte> separators) => FindStart(separators, false);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void Skip(int count)
-    {
-        _bufferedStart += count;
-        if (_bufferedStart == _bufferedEnd)
-            SkipAll();
-    }
-    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void SkipAll()
     {
@@ -114,26 +105,31 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : ID
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SkipSeparators(SearchValues<byte> separators)
+    private void Skip(int count)
     {
-        var fragmentStart = FindFragmentStart(separators);
-        if (fragmentStart < 0)
+        _bufferedStart += count;
+        if (_bufferedStart == _bufferedEnd)
+            SkipAll();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void Skip(SearchValues<byte> separators, bool fragmentOrSeparators)
+    {
+        var start = FindStart(separators, !fragmentOrSeparators);
+        if (start < 0)
             SkipAll();
         else
-            Skip(fragmentStart);
+            Skip(start);
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SkipSeparators(SearchValues<byte> separators) => Skip(separators, false);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SkipWord(SearchValues<byte> separators)
     {
-        var separatorsStart = FindSeparatorsStart(separators);
-        if (separatorsStart < 0)
-            SkipAll();
-        else
-        {
-            Skip(separatorsStart);
-            SkipSeparators(separators);
-        }
+        Skip(separators, true);
+        SkipSeparators(separators);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
