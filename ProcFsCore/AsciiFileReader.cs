@@ -41,6 +41,9 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : ID
         _stream.Dispose();
     }
 
+    /// <summary>
+    /// Reads more data to buffer if any
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ReadToBuffer()
     {
@@ -71,15 +74,19 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : ID
         }
     }
 
+    /// <summary>
+    /// Finds starting (from current + startIndex) position of word or separators.
+    /// Reads data into buffer if needed
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int FindStart(SearchValues<byte> separators, bool fragmentOrSeparators, int startIndex = 0)
+    private int FindStart(SearchValues<byte> separators, bool wordOrSeparators, int startIndex = 0)
     {
         if (_bufferedStart == _bufferedEnd)
             ReadToBuffer();
         do
         {
             var span = DataSpan[startIndex..];
-            var start = fragmentOrSeparators
+            var start = wordOrSeparators
                 ? span.IndexOfAnyExcept(separators)
                 : span.IndexOfAny(separators);
             if (start >= 0)
@@ -91,12 +98,23 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : ID
         } while (true);
     }
 
+    /// <summary>
+    /// Finds starting (from current + startIndex) position of word.
+    /// Reads data into buffer if needed
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int FindFragmentStart(SearchValues<byte> separators, int startIndex = 0) => FindStart(separators, true, startIndex);
+    private int FindWordStart(SearchValues<byte> separators, int startIndex = 0) => FindStart(separators, true, startIndex);
 
+    /// <summary>
+    /// Finds starting (from current) position of separators.
+    /// Reads data into buffer if needed
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private int FindSeparatorsStart(SearchValues<byte> separators) => FindStart(separators, false);
 
+    /// <summary>
+    /// Skips everything currently in the buffer
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void SkipAll()
     {
@@ -104,6 +122,9 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : ID
         _bufferedEnd = 0;
     }
 
+    /// <summary>
+    /// Skips count number of bytes in teh buffer
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Skip(int count)
     {
@@ -112,19 +133,30 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : ID
             SkipAll();
     }
 
+    /// <summary>
+    /// Skip word or separators 
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void Skip(SearchValues<byte> separators, bool fragmentOrSeparators)
+    private void Skip(SearchValues<byte> separators, bool wordOrSeparators)
     {
-        var start = FindStart(separators, !fragmentOrSeparators);
+        var start = FindStart(separators, !wordOrSeparators);
         if (start < 0)
             SkipAll();
         else
             Skip(start);
     }
 
+    /// <summary>
+    /// Skips separators.
+    /// Position is moved to the beginning of the word or to the end
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SkipSeparators(SearchValues<byte> separators) => Skip(separators, false);
+    private void SkipSeparators(SearchValues<byte> separators) => Skip(separators, false);
 
+    /// <summary>
+    /// Skips word and separators after the word.
+    /// Position is moved to the beginning of the next word or to the end
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SkipWord(SearchValues<byte> separators)
     {
@@ -132,15 +164,31 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : ID
         SkipSeparators(separators);
     }
 
+    /// <summary>
+    /// Skips word and whitespaces after the word.
+    /// Position is moved to the beginning of the next word or to the end
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SkipWord() => SkipWord(WhiteSpaces);
 
+    /// <summary>
+    /// Skips line and line break characters after the line.
+    /// Position is moved to the beginning of the next line or to the end
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SkipLine() => SkipWord(LineSeparators);
 
+    /// <summary>
+    /// Skips whitespaces.
+    /// Position is moved to the beginning of the word or to the end
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SkipWhiteSpaces() => SkipSeparators(WhiteSpaces);
 
+    /// <summary>
+    /// Reads word and skips separators after the word.
+    /// Position is moved to the beginning of the next word or to the end
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> ReadWord(SearchValues<byte> separators)
     {
@@ -156,21 +204,29 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : ID
         }
         else
         {
-            var fragmentStart = FindFragmentStart(separators, separatorsStart);
-            var result = DataSpan[..separatorsStart];
-            if (fragmentStart < 0)
+            var nextWordStart = FindWordStart(separators, separatorsStart);
+            var result = DataSpan[..separatorsStart]; // DataSpan calculation is altered by Skip/SkipAll so need to get it before
+            if (nextWordStart < 0)
                 SkipAll();
             else
-                Skip(fragmentStart);
+                Skip(nextWordStart);
             return result;
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<byte> ReadLine() => ReadWord(LineSeparators);
-
+    /// <summary>
+    /// Reads word and skips whitespaces after the word.
+    /// Position is moved to the beginning of the next word or to the end
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> ReadWord() => ReadWord(WhiteSpaces);
+
+    /// <summary>
+    /// Reads line and skips line break characters after the line.
+    /// Position is moved to the beginning of the next word or to the end
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ReadOnlySpan<byte> ReadLine() => ReadWord(LineSeparators);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string ReadStringWord() => ReadWord().ToAsciiString();

@@ -7,7 +7,6 @@ namespace ProcFsCore;
 
 public struct Process
 {
-    private static readonly SearchValues<byte> ProcessNameStartSeparator = SearchValues.Create("("u8);
     private static readonly SearchValues<byte> ProcessNameEndSeparator = SearchValues.Create(")"u8);
 
     private readonly ProcFs _instance;
@@ -245,8 +244,7 @@ public struct Process
         _pid = statReader.ReadInt32();
 
         // (2) name
-        statReader.SkipSeparators(ProcessNameStartSeparator);
-        _name = statReader.ReadWord(ProcessNameEndSeparator).ToAsciiString();
+        _name = statReader.ReadWord(ProcessNameEndSeparator)[1..].ToAsciiString();
         statReader.SkipWhiteSpaces();
 
         // (3) state
