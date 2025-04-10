@@ -114,7 +114,7 @@ internal struct AsciiFileReader(string fileName, int initialBufferSize = 0) : ID
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void SkipSeparators(SearchValues<byte> separators)
+    public void SkipSeparators(SearchValues<byte> separators)
     {
         var fragmentStart = FindFragmentStart(separators);
         if (fragmentStart < 0)

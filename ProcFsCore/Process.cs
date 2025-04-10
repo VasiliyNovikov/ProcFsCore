@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 
@@ -6,6 +7,9 @@ namespace ProcFsCore;
 
 public struct Process
 {
+    private static readonly SearchValues<byte> ProcessNameStartSeparator = SearchValues.Create("("u8);
+    private static readonly SearchValues<byte> ProcessNameEndSeparator = SearchValues.Create(")"u8);
+
     private readonly ProcFs _instance;
     private bool _initialized;
 
@@ -241,7 +245,9 @@ public struct Process
         _pid = statReader.ReadInt32();
 
         // (2) name
-        _name = statReader.ReadWord().Trim("()"u8).ToAsciiString();
+        statReader.SkipSeparators(ProcessNameStartSeparator);
+        _name = statReader.ReadWord(ProcessNameEndSeparator).ToAsciiString();
+        statReader.SkipWhiteSpaces();
 
         // (3) state
         _state = GetProcessState((char) statReader.ReadWord()[0]);
