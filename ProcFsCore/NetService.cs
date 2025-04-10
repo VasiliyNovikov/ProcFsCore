@@ -47,11 +47,7 @@ public readonly struct NetService
                 builder.Append(RemoteEndPoint);
             }
         }
-#if NETSTANDARD2_0
-        builder.Append($" {State}/{(int)State} {INode}");
-#else
         builder.Append(CultureInfo.InvariantCulture, $" {State}/{(int)State} {INode}");
-#endif
         return builder.ToString();
     }
 
