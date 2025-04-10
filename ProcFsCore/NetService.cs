@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Globalization;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace ProcFsCore;
@@ -70,8 +69,8 @@ public readonly struct NetService
             statReader.SkipWord();
             if (type != NetServiceType.Unix)
             {
-                var localEndPoint = NetEndPoint.Read(ref Unsafe.AsRef(in statReader));
-                var remoteEndPoint = NetEndPoint.Read(ref Unsafe.AsRef(in statReader));
+                var localEndPoint = NetEndPoint.Read(statReader);
+                var remoteEndPoint = NetEndPoint.Read(statReader);
                 var state = (NetServiceState)statReader.ReadInt16('x');
                         
                 statReader.SkipWord();

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -25,8 +24,6 @@ public readonly struct DiskStatistics
         TotalWeightedTime = totalWeightedTime;
     }
 
-    private static ReadOnlySpan<byte> LoopDeviceStart => "loop"u8;
-
     internal static IEnumerable<DiskStatistics> GetAll(ProcFs instance)
     {
         // http://man7.org/linux/man-pages/man5/proc.5.html
@@ -41,8 +38,8 @@ public readonly struct DiskStatistics
 
             var deviceName = statsReader.ReadWord();
 
-            var reads = Operation.Read(ref Unsafe.AsRef(in statsReader));
-            var writes = Operation.Read(ref Unsafe.AsRef(in statsReader));
+            var reads = Operation.Read(statsReader);
+            var writes = Operation.Read(statsReader);
 
             statsReader.SkipWord();
             var totalTime = statsReader.ReadInt64() / 1_000_000.0;
@@ -69,12 +66,13 @@ public readonly struct DiskStatistics
             Time = time;
         }
 
-        internal static Operation Read(ref AsciiFileReader reader)
+        internal static Operation Read(in AsciiFileReader reader)
         {
-            var count = reader.ReadInt64();
-            var merged = reader.ReadInt64();
-            var sectors = reader.ReadInt64();
-            var time = reader.ReadInt64() / 1_000_000.0;
+            ref var readerRef = ref Unsafe.AsRef(in reader);
+            var count = readerRef.ReadInt64();
+            var merged = readerRef.ReadInt64();
+            var sectors = readerRef.ReadInt64();
+            var time = readerRef.ReadInt64() / 1_000_000.0;
             return new Operation(count, merged, sectors * SectorSize, time);
         }
     }

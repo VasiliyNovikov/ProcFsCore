@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Net;
+using System.Runtime.CompilerServices;
 
 namespace ProcFsCore;
 
@@ -17,9 +18,10 @@ public readonly struct NetEndPoint
         Port = port;
     }
 
-    internal static NetEndPoint Read(ref AsciiFileReader statReader)
+    internal static NetEndPoint Read(in AsciiFileReader reader)
     {
-        return new NetEndPoint(NetAddress.Parse(statReader.ReadWord(AddressPortSeparator), NetAddressFormat.Hex), statReader.ReadInt32('x'));
+        ref var readerRef = ref Unsafe.AsRef(in reader);
+        return new NetEndPoint(NetAddress.Parse(readerRef.ReadWord(AddressPortSeparator), NetAddressFormat.Hex), readerRef.ReadInt32('x'));
     }
 
     public override string? ToString() => ((IPEndPoint?)this)?.ToString();
