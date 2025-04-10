@@ -25,6 +25,7 @@ public readonly struct NetStatistics
         using var statReader = new AsciiFileReader(instance.PathFor(NetDevRelativePath), 512);
         statReader.SkipLine();
         statReader.SkipWord(IfaceColumnHeaderSeparators);
+        statReader.SkipWhiteSpaces();
         var receiveColumnCount = 0;
         while (true)
         {
