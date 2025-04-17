@@ -3,6 +3,9 @@ namespace System.Text;
 
 public static class StringBuilderExtensions
 {
-    public static StringBuilder Append(this StringBuilder stringBuilder, IFormatProvider? provider, string value) => stringBuilder.Append(value);
+    extension(StringBuilder stringBuilder)
+    {
+        public StringBuilder Append(IFormatProvider? provider, string value) => stringBuilder.Append(value);
+    }
 }
 #endif

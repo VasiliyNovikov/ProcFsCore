@@ -14,7 +14,7 @@ public unsafe struct NetAddress
 #pragma warning restore 649
     private readonly int _length;
 
-    private Span<byte> Data => MemoryMarshalExtensions.CreateSpan(ref _data[0], _length);
+    private Span<byte> Data => MemoryMarshal.CreateSpan<byte>(ref _data[0], _length);
 
     public NetAddressVersion Version => _length == 4 ? NetAddressVersion.IPv4 : NetAddressVersion.IPv6;
 
@@ -56,7 +56,7 @@ public unsafe struct NetAddress
             {
                 Span<char> addressStr = stackalloc char[64];
                 var addressStrLen = AsciiExtensions.Encoding.GetChars(addressString, addressStr);
-                var frameworkAddress = IPAddressExtensions.Parse(addressStr[..addressStrLen]);
+                var frameworkAddress = IPAddress.Parse(addressStr[..addressStrLen]);
                 Span<byte> addressBytes = stackalloc byte[MaxAddressLength];
                 frameworkAddress.TryWriteBytes(addressBytes, out var addressBytesLen);
                 return new NetAddress(addressBytes[..addressBytesLen]);
@@ -68,5 +68,5 @@ public unsafe struct NetAddress
 
     public override string ToString() => ((IPAddress)this).ToString();
 
-    public static implicit operator IPAddress(in NetAddress address) => IPAddressExtensions.FromBytes(address.Data);
+    public static implicit operator IPAddress(in NetAddress address) => IPAddress.FromBytes(address.Data);
 }

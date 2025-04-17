@@ -7,7 +7,7 @@ namespace ProcFsCore;
 
 public struct MemoryStatistics
 {
-    private static readonly List<ReadOnlyMemory<byte>> Names = EnumExtensions
+    private static readonly List<ReadOnlyMemory<byte>> Names = Enum
         .GetNames<Section>()
         .Select(n => (ReadOnlyMemory<byte>)AsciiExtensions.Encoding.GetBytes(n))
         .ToList();

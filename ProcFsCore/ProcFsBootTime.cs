@@ -45,7 +45,7 @@ public class ProcFsBootTime
             if (statReader.ReadWord().SequenceEqual(BtimeStr))
             {
                 var bootTimeSeconds = statReader.ReadInt64();
-                return DateTimeExtensions.UnixEpoch + TimeSpan.FromSeconds(bootTimeSeconds);
+                return DateTime.UnixEpoch + TimeSpan.FromSeconds(bootTimeSeconds);
             }
             statReader.SkipLine();
         }
@@ -62,7 +62,7 @@ public class ProcFsBootTime
             bootTimeNanosecondsSinceEpochSum += ComputeOnce();
 
         var bootTimeNanosecondsSinceEpoch = bootTimeNanosecondsSinceEpochSum / iterations;
-        return DateTimeExtensions.UnixEpoch + TimeSpan.FromTicks(bootTimeNanosecondsSinceEpoch / NanosecondsPerTick);
+        return DateTime.UnixEpoch + TimeSpan.FromTicks(bootTimeNanosecondsSinceEpoch / NanosecondsPerTick);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static long ComputeOnce()

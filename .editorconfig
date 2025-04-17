@@ -1,7 +1,6 @@
 [*.cs]
 csharp_style_namespace_declarations = file_scoped
 dotnet_diagnostic.CA1051.severity = none
-dotnet_diagnostic.CA1512.severity = none  # Unsupported in .NET Standard 2.0
 dotnet_diagnostic.CA1711.severity = none
 dotnet_diagnostic.CA2101.severity = none  # It generates false positives
 
