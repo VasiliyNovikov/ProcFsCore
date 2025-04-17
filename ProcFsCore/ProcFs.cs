@@ -43,5 +43,5 @@ public class ProcFs
 
     public Process Process(int pid) => new(this, pid);
 
-    public Process CurrentProcess => Process(IsDefault ? Native.CurrentProcessId : 0); // 0 - special case for current process of non-default instance
+    public Process CurrentProcess => Process(IsDefault ? Environment.ProcessId : 0); // 0 - special case for current process of non-default instance
 }

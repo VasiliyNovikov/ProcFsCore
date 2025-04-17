@@ -1,39 +1,28 @@
-using System.Runtime.CompilerServices;
-
 namespace System.Net;
 
 internal static class IPAddressExtensions
 {
-    public static IPAddress Parse(ReadOnlySpan<char> address)
+    extension(IPAddress address)
     {
 #if NETSTANDARD2_0
-        return IPAddress.Parse(address.ToString());
-#else
-        return IPAddress.Parse(address);
-#endif
-    }
+        public static IPAddress Parse(ReadOnlySpan<char> ipSpan) => IPAddress.Parse(ipSpan.ToString());
 
-    public static IPAddress FromBytes(ReadOnlySpan<byte> address)
-    {
-#if NETSTANDARD2_0
-        return new(address.ToArray());
-#else
-        return new(address);
-#endif
-    }
-
-#if NETSTANDARD2_0
-    public static bool TryWriteBytes(this IPAddress address, Span<byte> destination, out int bytesWritten)
-    {
-        Span<byte> addressBytes = address.GetAddressBytes();
-        if (addressBytes.Length > destination.Length)
+        public bool TryWriteBytes(Span<byte> destination, out int bytesWritten)
         {
-            Unsafe.SkipInit(out bytesWritten);
-            return false;
+            Span<byte> addressBytes = address.GetAddressBytes();
+            if (addressBytes.Length > destination.Length)
+            {
+                bytesWritten = 0;
+                return false;
+            }
+            bytesWritten = addressBytes.Length;
+            addressBytes.CopyTo(destination);
+            return true;
         }
-        bytesWritten = addressBytes.Length;
-        addressBytes.CopyTo(destination);
-        return true;
-    }
+
+        public static IPAddress FromBytes(ReadOnlySpan<byte> addressBytes) => new(addressBytes.ToArray());
+#else
+        public static IPAddress FromBytes(ReadOnlySpan<byte> addressBytes) => new(addressBytes);
 #endif
+    }
 }

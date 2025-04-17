@@ -6,7 +6,6 @@ namespace ProcFsCore;
 
 public class ProcFsBootTime
 {
-    private const long NanosecondsPerTick =  1_000_000 / TimeSpan.TicksPerMillisecond;
     private static ReadOnlySpan<byte> BtimeStr => "btime"u8;
 
     private readonly ProcFs _instance;
@@ -45,7 +44,7 @@ public class ProcFsBootTime
             if (statReader.ReadWord().SequenceEqual(BtimeStr))
             {
                 var bootTimeSeconds = statReader.ReadInt64();
-                return DateTimeExtensions.UnixEpoch + TimeSpan.FromSeconds(bootTimeSeconds);
+                return DateTime.UnixEpoch + TimeSpan.FromSeconds(bootTimeSeconds);
             }
             statReader.SkipLine();
         }
@@ -62,7 +61,7 @@ public class ProcFsBootTime
             bootTimeNanosecondsSinceEpochSum += ComputeOnce();
 
         var bootTimeNanosecondsSinceEpoch = bootTimeNanosecondsSinceEpochSum / iterations;
-        return DateTimeExtensions.UnixEpoch + TimeSpan.FromTicks(bootTimeNanosecondsSinceEpoch / NanosecondsPerTick);
+        return DateTime.UnixEpoch + TimeSpan.FromTicks(bootTimeNanosecondsSinceEpoch / TimeSpan.NanosecondsPerTick);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static long ComputeOnce()

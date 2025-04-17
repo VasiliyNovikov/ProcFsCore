@@ -1,17 +1,15 @@
+#if NETSTANDARD2_0
 namespace System.Runtime.InteropServices;
 
 internal static class MemoryMarshalExtensions
 {
-    public static Span<T> CreateSpan<T>(scoped ref T data, int length) where T : unmanaged
+    extension(MemoryMarshal)
     {
-#if NETSTANDARD2_0
-        unsafe
+        public static unsafe Span<T> CreateSpan<T>(scoped ref T reference, int length) where T : unmanaged
         {
-            fixed (T* ptr = &data)
+            fixed (T* ptr = &reference)
                 return new Span<T>(ptr, length);
         }
-#else
-        return MemoryMarshal.CreateSpan(ref data, length);
-#endif
     }
 }
+#endif

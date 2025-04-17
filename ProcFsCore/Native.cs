@@ -14,9 +14,7 @@ internal static class Native
     public static readonly int TicksPerSecond = SystemConfig(SystemConfigName.TicksPerSecond);
 
     [DllImport(LibC, EntryPoint = "getpid")]
-    private static extern int GetPid();
-    private static readonly int? CurrentProcessIdValue;
-    public static readonly int CurrentProcessId = CurrentProcessIdValue ??= GetPid();
+    public static extern int GetPid();
 
     [DllImport(LibC, EntryPoint = "sysconf", SetLastError = true)]
     private static extern int SystemConfig(SystemConfigName name);

@@ -13,12 +13,12 @@ public class LinkTests
     [TestMethod]
     public void Test_ReadLink()
     {
-        var fileName = $"/proc/{Native.CurrentProcessId}/stat";
+        var fileName = $"/proc/{Environment.ProcessId}/stat";
         using (File.OpenRead(fileName))
         using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
         {
             socket.Bind(new IPEndPoint(IPAddress.Any, 12345));
-            var links = Directory.EnumerateFiles($"/proc/{Native.CurrentProcessId}/fd")
+            var links = Directory.EnumerateFiles($"/proc/{Environment.ProcessId}/fd")
                                        .Select(Link.Read)
                                        .ToArray();
             Assert.IsTrue(links.Any(l => l.Path == fileName));

@@ -1,14 +1,11 @@
+#if NETSTANDARD2_0
 namespace System;
 
 public static class EnumExtensions
 {
-    public static string[] GetNames<TEnum>() where TEnum : struct, Enum
+    extension(Enum)
     {
-        return Enum
-#if NETSTANDARD2_0
-            .GetNames(typeof(TEnum));
-#else
-            .GetNames<TEnum>();
-#endif
+        public static string[] GetNames<TEnum>() where TEnum : struct, Enum => Enum.GetNames(typeof(TEnum));
     }
 }
+#endif
