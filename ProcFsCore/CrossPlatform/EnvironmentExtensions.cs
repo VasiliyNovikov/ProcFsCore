@@ -5,11 +5,11 @@ namespace System;
 
 internal static class EnvironmentExtensions
 {
-    private static int? _currentProcessIdValue;
+    private static readonly int _processId = Native.GetPid();
 
     extension(Environment)
     {
-        public static int ProcessId => _currentProcessIdValue ??= Native.GetPid();
+        public static int ProcessId => _processId;
     }
 }
 #endif
