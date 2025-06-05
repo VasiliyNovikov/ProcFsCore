@@ -1,4 +1,5 @@
 #if NETSTANDARD2_0
+#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types - False positive in .NET Standard 2.0
 using System.Buffers;
 using System.Runtime.CompilerServices;
 
