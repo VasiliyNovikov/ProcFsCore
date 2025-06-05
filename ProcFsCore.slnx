@@ -6,6 +6,7 @@
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
     <File Path=".gitignore" />
+    <File Path="AGENTS.md" />
     <File Path="Directory.Packages.props" />
     <File Path="LICENSE" />
     <File Path="PlatformRestriction.cs" />
