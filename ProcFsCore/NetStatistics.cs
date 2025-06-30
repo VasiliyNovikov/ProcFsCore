@@ -1,12 +1,13 @@
 using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace ProcFsCore;
 
 public readonly struct NetStatistics
 {
-    private const string NetDevRelativePath = "net/dev";
+    private const string DevRelativePath = "dev";
     private static readonly SearchValues<byte> IfaceColumnHeaderSeparators = SearchValues.Create("|"u8);
 
     public string InterfaceName { get; }
@@ -20,9 +21,9 @@ public readonly struct NetStatistics
         Transmit = transmit;
     }
 
-    internal static int GetReceiveColumnCount(ProcFs instance)
+    internal static int GetReceiveColumnCount(string netPath)
     {
-        using var statReader = new AsciiFileReader(instance.PathFor(NetDevRelativePath), 512);
+        using var statReader = new AsciiFileReader(Path.Combine(netPath, DevRelativePath), 512);
         statReader.SkipLine();
         statReader.SkipWord(IfaceColumnHeaderSeparators);
         statReader.SkipWhiteSpaces();
@@ -41,13 +42,9 @@ public readonly struct NetStatistics
         return receiveColumnCount;
     }
 
-    internal static IEnumerable<NetStatistics> GetAll(ProcFs instance, int receiveColumnCount) => GetAll(instance.PathFor(NetDevRelativePath), receiveColumnCount);
-
-    internal static IEnumerable<NetStatistics> Get(ProcFs instance, int pid, int receiveColumnCount) => GetAll(instance.PathFor($"{pid}/{NetDevRelativePath}"), receiveColumnCount);
-
-    private static IEnumerable<NetStatistics> GetAll(string path, int receiveColumnCount)
+    internal static IEnumerable<NetStatistics> Get(string netPath, int receiveColumnCount)
     {
-        using var statReader = new AsciiFileReader(path, 2048);
+        using var statReader = new AsciiFileReader(Path.Combine(netPath, DevRelativePath), 2048);
         statReader.SkipLine();
         statReader.SkipLine();
         while (!statReader.EndOfStream)

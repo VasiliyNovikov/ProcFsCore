@@ -70,15 +70,24 @@ public class ProcessTests : ProcFsTestsBase
     }
 
     [TestMethod]
+    public void Thread_Current_Test()
+    {
+        var thread = ProcFs.Default.CurrentThread;
+        Assert.AreEqual(Native.GetTid(), thread.Id);
+        Assert.AreEqual(TaskState.Running, thread.State);
+        Assert.IsTrue(ProcFs.Default.CurrentProcess.Threads.Any(t => t.Id == thread.Id));
+    }
+
+    [TestMethod]
     public void Process_ByPid_Test()
     {
-        var process = DiagnosticsProcess.Start("sleep", "1000");
+        var process = DiagnosticsProcess.Start("sleep", "10000");
         Assert.IsNotNull(process);
         try
         {
             var pi = ProcFs.Default.Process(process.Id);
+            Assert.AreEqual("sleep\010000", pi.CommandLine);
             VerifyProcess(pi, process);
-            Assert.AreEqual("sleep\01000", pi.CommandLine);
         }
         finally
         {

@@ -10,7 +10,7 @@ public class NetArpTests : ProcFsTestsBase
     [TestMethod]
     public void NetArpEntry_Get_Test()
     {
-        var entries = ProcFs.Default.Net.Arp().ToList();
+        var entries = ProcFs.Default.Net.Arp.ToList();
         Assert.IsTrue(entries.Count > 0);
     }
 
@@ -18,7 +18,7 @@ public class NetArpTests : ProcFsTestsBase
     public void NetArpEntry_Parse_Test()
     {
         var testProcFs = TestProcFs();
-        var entries = testProcFs.Net.Arp().ToList();
+        var entries = testProcFs.Net.Arp.ToList();
         Assert.AreEqual(5, entries.Count);
 
         static void VerifyEntry(in NetArpEntry entry, string address, string hardwareAddress, string device)

@@ -4,10 +4,10 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="BenchmarkDotNet" Version="0.15.0" />
-    <PackageVersion Include="MSTest" Version="3.9.1" />
+    <PackageVersion Include="BenchmarkDotNet" Version="0.15.2" />
+    <PackageVersion Include="MSTest" Version="3.9.3" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageVersion Include="Microsoft.Bcl.Memory" Version="9.0.5" />
+    <PackageVersion Include="Microsoft.Bcl.Memory" Version="9.0.6" />
   </ItemGroup>
 </Project>

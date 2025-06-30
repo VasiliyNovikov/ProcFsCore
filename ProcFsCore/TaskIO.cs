@@ -1,19 +1,21 @@
+using System.IO;
+
 namespace ProcFsCore;
 
-public readonly struct ProcessIO
+public readonly struct TaskIO
 {
     public readonly Direction Read;
     public readonly Direction Write;
         
-    private ProcessIO(in Direction read, in Direction write)
+    private TaskIO(in Direction read, in Direction write)
     {
         Read = read;
         Write = write;
     }
 
-    internal static ProcessIO Get(ProcFs instance, int pid)
+    internal static TaskIO Get(string basePath)
     {
-        using var statReader = new AsciiFileReader(instance.PathFor($"{pid}/io"), 256);
+        using var statReader = new AsciiFileReader(Path.Combine(basePath, "io"), 256);
         statReader.SkipWord();
         var readCharacters = statReader.ReadInt64();
         statReader.SkipWord();
@@ -27,8 +29,8 @@ public readonly struct ProcessIO
         statReader.SkipWord();
         var writeBytes = statReader.ReadInt64();
                 
-        return new ProcessIO(new Direction(readCharacters, readBytes, readSysCalls),
-                             new Direction(writeCharacters, writeBytes, writeSysCalls));
+        return new TaskIO(new Direction(readCharacters, readBytes, readSysCalls),
+                          new Direction(writeCharacters, writeBytes, writeSysCalls));
     }
 
     public readonly struct Direction(long characters, long bytes, long sysCalls)
