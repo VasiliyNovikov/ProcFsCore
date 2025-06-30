@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 
 namespace ProcFsCore;
 
@@ -17,11 +18,11 @@ public readonly struct NetArpEntry
         Device = device;
     }
 
-    public override string ToString() => $"{Address.ToString()} {HardwareAddress.ToString()} {Mask} {Device}";
+    public override string ToString() => $"{Address} {HardwareAddress} {Mask} {Device}";
 
-    internal static IEnumerable<NetArpEntry> GetAll(ProcFs instance)
+    internal static IEnumerable<NetArpEntry> GetAll(string netPath)
     {
-        using var statReader = new AsciiFileReader(instance.PathFor("net/arp"), 1024);
+        using var statReader = new AsciiFileReader(Path.Combine(netPath, "arp"), 1024);
         statReader.SkipLine();
         while (!statReader.EndOfStream)
         {

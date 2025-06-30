@@ -1,25 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace ProcFsCore;
 
 public class ProcFsNet
 {
     private readonly ProcFs _instance;
-    private readonly Lazy<int> _statReceiveColumnCount;
+    private readonly string _basePath;
 
-    internal int StatReceiveColumnCount => _statReceiveColumnCount.Value;
+    private string Path => field ??= System.IO.Path.Combine(_basePath, "net");
 
-    public ProcFsNetServices Services { get; }
+    public ProcFsNetServices Services => field ??= new(Path);
 
-    public IEnumerable<NetStatistics> Statistics() => NetStatistics.GetAll(_instance, StatReceiveColumnCount);
+    public IEnumerable<NetStatistics> Statistics => NetStatistics.Get(Path, _instance.NetStatReceiveColumnCount);
 
-    public IEnumerable<NetArpEntry> Arp() => NetArpEntry.GetAll(_instance);
+    public IEnumerable<NetArpEntry> Arp => NetArpEntry.GetAll(Path);
 
-    internal ProcFsNet(ProcFs instance)
+    internal ProcFsNet(ProcFs instance, string basePath)
     {
         _instance = instance;
-        _statReceiveColumnCount = new Lazy<int>(() => NetStatistics.GetReceiveColumnCount(instance));
-        Services = new ProcFsNetServices(instance);
+        _basePath = basePath;
     }
 }

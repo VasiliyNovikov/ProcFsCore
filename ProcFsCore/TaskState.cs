@@ -1,6 +1,6 @@
 ﻿namespace ProcFsCore;
 
-public enum ProcessState
+public enum TaskState
 {
     /// <summary>
     /// R: Running

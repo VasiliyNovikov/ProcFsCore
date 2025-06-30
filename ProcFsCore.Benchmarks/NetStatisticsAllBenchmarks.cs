@@ -25,7 +25,7 @@ public class NetStatisticsAllBenchmarks : BaseBenchmarks
     [Benchmark]
     public void ProcFs_NetStatistics_All()
     {
-        foreach (var stats in ProcFs.Default.Net.Statistics())
+        foreach (var stats in ProcFs.Default.Net.Statistics)
         {
             Use(stats.Receive.Bytes);
             Use(stats.Receive.Packets);

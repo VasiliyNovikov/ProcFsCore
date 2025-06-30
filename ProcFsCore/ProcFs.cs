@@ -12,6 +12,9 @@ public class ProcFs
 
     private readonly ProcFsBootTime _bootTime;
 
+    private readonly Lazy<int> _netStatReceiveColumnCount;
+    internal int NetStatReceiveColumnCount => _netStatReceiveColumnCount.Value;
+
     internal readonly bool IsDefault;
 
     public string RootPath { get; }
@@ -21,7 +24,7 @@ public class ProcFs
     public ProcFsCpu Cpu { get; }
 
     public ProcFsDisk Disk { get; }
-        
+
     public ProcFsMemory Memory { get; }
 
     public ProcFsNet Net { get; }
@@ -30,10 +33,11 @@ public class ProcFs
     {
         RootPath = rootPath;
         _bootTime = new ProcFsBootTime(this);
+        _netStatReceiveColumnCount = new Lazy<int>(() => NetStatistics.GetReceiveColumnCount(PathFor("net")));
         Cpu = new ProcFsCpu(this);
         Disk = new ProcFsDisk(this);
         Memory = new ProcFsMemory(this);
-        Net = new ProcFsNet(this);
+        Net = new ProcFsNet(this, RootPath);
         IsDefault = rootPath == DefaultRootPath;
     }
 
@@ -43,5 +47,6 @@ public class ProcFs
 
     public Process Process(int pid) => new(this, pid);
 
-    public Process CurrentProcess => Process(IsDefault ? Environment.ProcessId : 0); // 0 - special case for current process of non-default instance
+    public Process CurrentProcess => Process(Environment.ProcessId);
+    public Task CurrentThread => CurrentProcess.Thread(Native.GetTid());
 }

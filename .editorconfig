@@ -4,6 +4,14 @@ dotnet_diagnostic.CA1051.severity = none
 dotnet_diagnostic.CA1711.severity = none
 dotnet_diagnostic.CA2101.severity = none  # It generates false positives
 
+# For VS Code users
+dotnet_diagnostic.IDE0008.severity = none
+dotnet_diagnostic.IDE0011.severity = none
+dotnet_diagnostic.IDE0021.severity = none
+dotnet_diagnostic.IDE0022.severity = none
+dotnet_diagnostic.IDE0046.severity = none
+dotnet_diagnostic.IDE0055.severity = none
+
 [*{Tests,Benchmarks}.cs]
 dotnet_diagnostic.CA1707.severity = none
 dotnet_diagnostic.CA1822.severity = none

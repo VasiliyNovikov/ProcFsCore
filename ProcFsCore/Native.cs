@@ -16,6 +16,9 @@ internal static class Native
     [DllImport(LibC, EntryPoint = "getpid")]
     public static extern int GetPid();
 
+    [DllImport(LibC, EntryPoint = "gettid")]
+    public static extern int GetTid();
+
     [DllImport(LibC, EntryPoint = "sysconf", SetLastError = true)]
     private static extern int SystemConfig(SystemConfigName name);
 

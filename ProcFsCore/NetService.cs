@@ -52,16 +52,16 @@ public readonly struct NetService
 
     private static readonly string[,] NetServiceFiles = 
     {
-        { "net/tcp", "net/tcp6" },
-        { "net/udp", "net/udp6" },
-        { "net/raw", "net/raw6" },
-        { "net/unix", null! }
+        { "tcp", "tcp6" },
+        { "udp", "udp6" },
+        { "raw", "raw6" },
+        { "unix", null! }
     };
 
-    private static IEnumerable<NetService> GetAll(ProcFs instance, NetServiceType type, NetAddressVersion? addressVersion)
+    private static IEnumerable<NetService> GetAll(string netPath, NetServiceType type, NetAddressVersion? addressVersion)
     {
         var serviceFile = NetServiceFiles[(int) type, (addressVersion ?? NetAddressVersion.IPv4) == NetAddressVersion.IPv4 ? 0 : 1];
-        using var statReader = new AsciiFileReader(instance.PathFor(serviceFile), 256);
+        using var statReader = new AsciiFileReader(System.IO.Path.Combine(netPath, serviceFile), 256);
         statReader.SkipLine();
         while (!statReader.EndOfStream)
         {
@@ -99,11 +99,11 @@ public readonly struct NetService
         }
     }
 
-    internal static IEnumerable<NetService> GetTcp(ProcFs instance, NetAddressVersion addressVersion) => GetAll(instance, NetServiceType.Tcp, addressVersion);
+    internal static IEnumerable<NetService> GetTcp(string netPath, NetAddressVersion addressVersion) => GetAll(netPath, NetServiceType.Tcp, addressVersion);
 
-    internal static IEnumerable<NetService> GetUdp(ProcFs instance, NetAddressVersion addressVersion) => GetAll(instance, NetServiceType.Udp, addressVersion);
+    internal static IEnumerable<NetService> GetUdp(string netPath, NetAddressVersion addressVersion) => GetAll(netPath, NetServiceType.Udp, addressVersion);
 
-    internal static IEnumerable<NetService> GetRaw(ProcFs instance, NetAddressVersion addressVersion) => GetAll(instance, NetServiceType.Raw, addressVersion);
+    internal static IEnumerable<NetService> GetRaw(string netPath, NetAddressVersion addressVersion) => GetAll(netPath, NetServiceType.Raw, addressVersion);
 
-    internal static IEnumerable<NetService> GetUnix(ProcFs instance) => GetAll(instance, NetServiceType.Unix, null);
+    internal static IEnumerable<NetService> GetUnix(string netPath) => GetAll(netPath, NetServiceType.Unix, null);
 }
