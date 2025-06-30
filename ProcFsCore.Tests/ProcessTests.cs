@@ -81,13 +81,13 @@ public class ProcessTests : ProcFsTestsBase
     [TestMethod]
     public void Process_ByPid_Test()
     {
-        var process = DiagnosticsProcess.Start("sleep", "1000");
+        var process = DiagnosticsProcess.Start("sleep", "10000");
         Assert.IsNotNull(process);
         try
         {
             var pi = ProcFs.Default.Process(process.Id);
+            Assert.AreEqual("sleep\010000", pi.CommandLine);
             VerifyProcess(pi, process);
-            Assert.AreEqual("sleep\01000", pi.CommandLine);
         }
         finally
         {
