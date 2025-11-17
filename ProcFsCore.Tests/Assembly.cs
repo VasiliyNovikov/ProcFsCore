@@ -1,1 +1,1 @@
-[assembly: Microsoft.VisualStudio.TestTools.UnitTesting.Parallelize]
+[assembly: Microsoft.VisualStudio.TestTools.UnitTesting.DoNotParallelize]
