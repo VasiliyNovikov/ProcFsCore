@@ -19,8 +19,8 @@ public class LinkTests
         {
             socket.Bind(new IPEndPoint(IPAddress.Any, 12345));
             var links = Directory.EnumerateFiles($"/proc/{Environment.ProcessId}/fd")
-                                       .Select(Link.Read)
-                                       .ToArray();
+                                 .Select(Link.Read)
+                                 .ToArray();
             Assert.IsTrue(links.Any(l => l.Path == fileName));
             Assert.IsTrue(links.Any(l => l.Type == LinkType.Socket));
         }

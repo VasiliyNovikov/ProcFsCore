@@ -1,5 +1,4 @@
 using System;
-using System.Text;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -68,5 +67,5 @@ public unsafe struct NetAddress
 
     public override string ToString() => ((IPAddress)this).ToString();
 
-    public static implicit operator IPAddress(in NetAddress address) => IPAddress.FromBytes(address.Data);
+    public static implicit operator IPAddress(in NetAddress address) => new(address.Data);
 }
