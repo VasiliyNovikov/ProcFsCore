@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using DiagnosticsProcess = System.Diagnostics.Process;
 
@@ -83,6 +84,7 @@ public class ProcessTests : ProcFsTestsBase
     {
         var process = DiagnosticsProcess.Start("sleep", "10000");
         Assert.IsNotNull(process);
+        Thread.Sleep(10); // Give it some time to start
         try
         {
             var pi = ProcFs.Default.Process(process.Id);
