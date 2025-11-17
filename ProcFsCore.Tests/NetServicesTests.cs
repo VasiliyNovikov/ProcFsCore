@@ -78,7 +78,7 @@ public class NetServicesTests : ProcFsTestsBase
             var expectedServices = IPGlobalProperties.GetIPGlobalProperties()
                                                      .GetActiveTcpConnections()
                                                      .ToArray();
-            Assert.AreEqual(expectedServices.Length, services.Length);
+            Assert.HasCount(expectedServices.Length, services);
             for (var i = 0; i < services.Length; ++i)
             {
                 var service = services[i];
@@ -101,7 +101,7 @@ public class NetServicesTests : ProcFsTestsBase
                                                       .ToArray();
             var expectedServices = IPGlobalProperties.GetIPGlobalProperties()
                                                      .GetActiveTcpListeners();
-            Assert.AreEqual(expectedServices.Length, services.Length);
+            Assert.HasCount(expectedServices.Length, services);
             for (var i = 0; i < services.Length; ++i)
             {
                 var service = services[i];
@@ -118,7 +118,7 @@ public class NetServicesTests : ProcFsTestsBase
         {
             var services = ProcFs.Default.Net.Services.Udp(NetAddressVersion.IPv4).Concat(ProcFs.Default.Net.Services.Udp(NetAddressVersion.IPv6)).ToArray();
             var expectedEndpoints = IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners();
-            Assert.AreEqual(expectedEndpoints.Length, services.Length);
+            Assert.HasCount(expectedEndpoints.Length, services);
             for (var i = 0; i < services.Length; ++i)
             {
                 var service = services[i];
@@ -134,7 +134,7 @@ public class NetServicesTests : ProcFsTestsBase
         var services = ProcFs.Default.Net.Services.Unix().ToArray();
         foreach (var service in services)
             if (service.Path != null)
-                Assert.IsTrue(service.Path.Length > 0);
+                Assert.IsGreaterThan(0, service.Path.Length);
     }
 
     [TestMethod]

@@ -9,10 +9,10 @@ public class MemoryStatisticsTests : ProcFsTestsBase
     public void MemoryStatistics_Test()
     {
         var stats = ProcFs.Default.Memory.Statistics();
-        Assert.IsTrue(stats.Total > 0, "Total > 0");
-        Assert.IsTrue(stats.Available > 0, "Available > 0");
-        Assert.IsTrue(stats.Free > 0, "Free > 0");
-        Assert.IsTrue(stats.Total > stats.Available, "Total > Available");
-        Assert.IsTrue(stats.Total > stats.Free, "Total > Free");
+        Assert.IsGreaterThan(0, stats.Total);
+        Assert.IsGreaterThan(0, stats.Available);
+        Assert.IsGreaterThan(0, stats.Free);
+        Assert.IsGreaterThan(stats.Available, stats.Total);
+        Assert.IsGreaterThan(stats.Free, stats.Total);
     }
 }

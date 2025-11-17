@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using DiagnosticsProcess = System.Diagnostics.Process;
 
@@ -23,7 +24,7 @@ public class ProcessTests : ProcFsTestsBase
             process.Refresh();
             p.Refresh();
             if (process.ProcessName != p.Name)
-                Assert.IsTrue(p.CommandLine.Contains(process.ProcessName), $"Process name mismatch: {p.Name} ({p.CommandLine}) - {process.ProcessName}");
+                Assert.Contains(process.ProcessName, p.CommandLine, $"Process name mismatch: {p.Name} ({p.CommandLine}) - {process.ProcessName}");
         });
 
         Assert.IsNotNull(p.CommandLine);
@@ -83,6 +84,7 @@ public class ProcessTests : ProcFsTestsBase
     {
         var process = DiagnosticsProcess.Start("sleep", "10000");
         Assert.IsNotNull(process);
+        Thread.Sleep(10); // Give it some time to start
         try
         {
             var pi = ProcFs.Default.Process(process.Id);
@@ -105,15 +107,15 @@ public class ProcessTests : ProcFsTestsBase
         {
             pis = ProcFs.Default.Processes().ToDictionary(pi => pi.Pid);
             processes = DiagnosticsProcess.GetProcesses().ToDictionary(p => p.Id);
-            Assert.AreEqual(processes.Count, pis.Count);
+            Assert.HasCount(processes.Count, pis);
             CollectionAssert.AreEquivalent(pis.Keys, processes.Keys);
-        });
             
-        foreach (var pi in pis!.Values)
-        {
-            var process = processes![pi.Pid];
-            VerifyProcess(pi, process);
-        }
+            foreach (var pi in pis!.Values)
+            {
+                var process = processes![pi.Pid];
+                VerifyProcess(pi, process);
+            }
+        });
     }
         
     [TestMethod]
@@ -176,21 +178,21 @@ public class ProcessTests : ProcFsTestsBase
             
         var ioStats = process.IO;
         // Assert.IsTrue(ioStats.Read.Bytes > 0, "Read.Bytes > 0"); // Not sure how to initiate a read directly from disk - it seems always comes from cache
-        Assert.IsTrue(ioStats.Read.Characters > 0, "Read.Characters > 0");
-        Assert.IsTrue(ioStats.Read.Characters >= ioStats.Read.Bytes, "Read.Characters >= Read.Bytes");
-        Assert.IsTrue(ioStats.Read.SysCalls > 0, "Read.SysCalls > 0");
-        Assert.IsTrue(ioStats.Read.Characters > initialIoStats.Read.Characters, "Read.Characters > initial.Read.Characters");
-        Assert.IsTrue(ioStats.Read.SysCalls > initialIoStats.Read.SysCalls, "Read.SysCalls > initial.Read.SysCalls");
+        Assert.IsGreaterThan(0, ioStats.Read.Characters);
+        Assert.IsGreaterThanOrEqualTo(ioStats.Read.Bytes, ioStats.Read.Characters);
+        Assert.IsGreaterThan(0, ioStats.Read.SysCalls);
+        Assert.IsGreaterThan(initialIoStats.Read.Characters, ioStats.Read.Characters);
+        Assert.IsGreaterThan(initialIoStats.Read.SysCalls, ioStats.Read.SysCalls);
         Assert.AreEqual(mb * fileSizeMb, ioStats.Read.Characters - initialIoStats.Read.Characters, ioErrorDelta);
             
             
-        Assert.IsTrue(ioStats.Write.Bytes > 0, "Write.Bytes > 0");
-        Assert.IsTrue(ioStats.Write.Characters > 0, "Write.Characters > 0");
-        Assert.IsTrue(ioStats.Write.Characters > ioStats.Write.Bytes, "Write.Characters > Write.Bytes");
-        Assert.IsTrue(ioStats.Write.SysCalls > 0, "Write.SysCalls > 0");
-        Assert.IsTrue(ioStats.Write.Characters > initialIoStats.Write.Characters, "Write.Characters > initial.Write.Characters");
-        Assert.IsTrue(ioStats.Write.Bytes > initialIoStats.Write.Bytes, "Write.Bytes > initial.Write.Bytes");
-        Assert.IsTrue(ioStats.Write.SysCalls > initialIoStats.Write.SysCalls, "Write.SysCalls > initial.Write.SysCalls");
+        Assert.IsGreaterThan(0, ioStats.Write.Bytes);
+        Assert.IsGreaterThan(0, ioStats.Write.Characters);
+        Assert.IsGreaterThan(ioStats.Write.Bytes, ioStats.Write.Characters);
+        Assert.IsGreaterThan(0, ioStats.Write.SysCalls);
+        Assert.IsGreaterThan(initialIoStats.Write.Characters, ioStats.Write.Characters);
+        Assert.IsGreaterThan(initialIoStats.Write.Bytes, ioStats.Write.Bytes);
+        Assert.IsGreaterThan(initialIoStats.Write.SysCalls, ioStats.Write.SysCalls);
         Assert.AreEqual(mb * fileSizeMb, ioStats.Write.Characters - initialIoStats.Write.Characters, ioErrorDelta);
         Assert.AreEqual(mb * fileSizeMb, ioStats.Write.Bytes - initialIoStats.Write.Bytes, ioErrorDelta);
     }

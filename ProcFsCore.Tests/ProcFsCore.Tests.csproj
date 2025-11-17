@@ -1,10 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="../ProcFsCore.targets" />
-  <PropertyGroup>
-    <TargetFrameworks>$(TargetFrameworks);net6.0</TargetFrameworks>
-    <SuppressTfmSupportBuildWarnings Condition="'$(TargetFramework)' == 'net6.0'">true</SuppressTfmSupportBuildWarnings>
-    <TestTfmsInParallel>false</TestTfmsInParallel>
-  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MSTest" />
   </ItemGroup>

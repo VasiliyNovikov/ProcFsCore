@@ -17,9 +17,9 @@ public class CpuStatisticsTests : ProcFsTestsBase
         foreach (var stat in stats)
         {
             Assert.AreEqual(i, stat.CpuNumber ?? -1);
-            Assert.IsTrue(stat.UserTime > 0, "User time shouldn't be 0");
-            Assert.IsTrue(stat.KernelTime > 0, "Kernel time shouldn't be 0");
-            Assert.IsTrue(stat.SoftIrqTime > 0, "Soft IRQ time shouldn't be 0");
+            Assert.IsGreaterThan(0, stat.UserTime, "User time shouldn't be 0");
+            Assert.IsGreaterThan(0, stat.KernelTime, "Kernel time shouldn't be 0");
+            Assert.IsGreaterThan(0, stat.SoftIrqTime, "Soft IRQ time shouldn't be 0");
             ++i;
         }
     }

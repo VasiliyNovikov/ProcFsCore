@@ -17,10 +17,10 @@ public class LinkTests
         using (File.OpenRead(fileName))
         using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
         {
-            socket.Bind(new IPEndPoint(IPAddress.Any, 12345));
+            socket.Bind(new IPEndPoint(IPAddress.Any, 0));
             var links = Directory.EnumerateFiles($"/proc/{Environment.ProcessId}/fd")
-                                       .Select(Link.Read)
-                                       .ToArray();
+                                 .Select(Link.Read)
+                                 .ToArray();
             Assert.IsTrue(links.Any(l => l.Path == fileName));
             Assert.IsTrue(links.Any(l => l.Type == LinkType.Socket));
         }
