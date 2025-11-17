@@ -109,13 +109,13 @@ public class ProcessTests : ProcFsTestsBase
             processes = DiagnosticsProcess.GetProcesses().ToDictionary(p => p.Id);
             Assert.HasCount(processes.Count, pis);
             CollectionAssert.AreEquivalent(pis.Keys, processes.Keys);
-        });
             
-        foreach (var pi in pis!.Values)
-        {
-            var process = processes![pi.Pid];
-            VerifyProcess(pi, process);
-        }
+            foreach (var pi in pis!.Values)
+            {
+                var process = processes![pi.Pid];
+                VerifyProcess(pi, process);
+            }
+        });
     }
         
     [TestMethod]
