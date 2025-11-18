@@ -71,8 +71,8 @@ public class NetServicesTests : ProcFsTestsBase
     {
         RetryOnAssert(() =>
         {
-            var services = ProcFs.Default.Net.Services.Tcp(NetAddressVersion.IPv4)
-                                                      .Concat(ProcFs.Default.Net.Services.Tcp(NetAddressVersion.IPv6))
+            var services = ProcFs.Default.Net.Services.Tcp().Select(s => new { s.State, LocalEndPoint = (IPEndPoint)s.LocalEndPoint, RemoteEndPoint = (IPEndPoint)s.RemoteEndPoint })
+                                                      .Concat(ProcFs.Default.Net.Services.Tcp6().Select(s => new { s.State, LocalEndPoint = (IPEndPoint)s.LocalEndPoint, RemoteEndPoint = (IPEndPoint)s.RemoteEndPoint }))
                                                       .Where(s => s.State != NetServiceState.Listen)
                                                       .ToArray();
             var expectedServices = IPGlobalProperties.GetIPGlobalProperties()
@@ -95,53 +95,51 @@ public class NetServicesTests : ProcFsTestsBase
     {
         RetryOnAssert(() =>
         {
-            var services = ProcFs.Default.Net.Services.Tcp(NetAddressVersion.IPv4)
-                                                      .Concat(ProcFs.Default.Net.Services.Tcp(NetAddressVersion.IPv6))
+            var services = ProcFs.Default.Net.Services.Tcp().Select(s => new { s.State, LocalEndPoint = (IPEndPoint)s.LocalEndPoint })
+                                                      .Concat(ProcFs.Default.Net.Services.Tcp6().Select(s => new { s.State, LocalEndPoint = (IPEndPoint)s.LocalEndPoint }))
                                                       .Where(s => s.State == NetServiceState.Listen)
+                                                      .Select(s => s.LocalEndPoint)
                                                       .ToArray();
             var expectedServices = IPGlobalProperties.GetIPGlobalProperties()
                                                      .GetActiveTcpListeners();
             Assert.HasCount(expectedServices.Length, services);
             for (var i = 0; i < services.Length; ++i)
-            {
-                var service = services[i];
-                var expectedService = expectedServices[i];
-                VerifyEndpoint(expectedService, service.LocalEndPoint);
-            }
+                VerifyEndpoint(expectedServices[i], services[i]);
         });
     }
-        
+
     [TestMethod]
     public void NetServices_Udp_Test()
     {
         RetryOnAssert(() =>
         {
-            var services = ProcFs.Default.Net.Services.Udp(NetAddressVersion.IPv4).Concat(ProcFs.Default.Net.Services.Udp(NetAddressVersion.IPv6)).ToArray();
+            var services = ProcFs.Default.Net.Services.Udp().Select(s => (IPEndPoint)s.LocalEndPoint)
+                                                      .Concat(ProcFs.Default.Net.Services.Udp6().Select(s => (IPEndPoint)s.LocalEndPoint))
+                                                      .ToArray();
             var expectedEndpoints = IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners();
             Assert.HasCount(expectedEndpoints.Length, services);
             for (var i = 0; i < services.Length; ++i)
-            {
-                var service = services[i];
-                var expectedEndpoint = expectedEndpoints[i];
-                VerifyEndpoint(expectedEndpoint, service.LocalEndPoint);
-            }
+                VerifyEndpoint(expectedEndpoints[i], services[i]);
         });
     }
 
     [TestMethod]
     public void NetServices_Unix_Test()
     {
-        var services = ProcFs.Default.Net.Services.Unix().ToArray();
-        foreach (var service in services)
-            if (service.Path != null)
-                Assert.IsGreaterThan(0, service.Path.Length);
+        foreach (var service in ProcFs.Default.Net.Services.Unix())
+            if (service.Path is { } path)
+            {
+                Assert.IsFalse(string.IsNullOrWhiteSpace(path));
+                Assert.IsGreaterThan(0, path.Length);
+            }
     }
 
     [TestMethod]
     public void NetServices_Raw_Test()
     {
-        var services = ProcFs.Default.Net.Services.Raw(NetAddressVersion.IPv4).Concat(ProcFs.Default.Net.Services.Raw(NetAddressVersion.IPv6)).ToArray();
-        foreach (var service in services)
+        foreach (var service in ProcFs.Default.Net.Services.Raw())
+            Assert.IsTrue(!service.LocalEndPoint.IsEmpty || !service.RemoteEndPoint.IsEmpty);
+        foreach (var service in ProcFs.Default.Net.Services.Raw6())
             Assert.IsTrue(!service.LocalEndPoint.IsEmpty || !service.RemoteEndPoint.IsEmpty);
     }
 }

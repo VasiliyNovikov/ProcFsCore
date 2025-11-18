@@ -1,24 +1,68 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using NetworkingPrimitivesCore;
 
 namespace ProcFsCore;
 
-public readonly struct NetService
+public interface INetService
 {
-    public NetServiceType Type { get; }
-    public NetEndPoint LocalEndPoint { get; }
-    public NetEndPoint RemoteEndPoint { get; }
+    NetServiceType Type { get; }
+    NetServiceState State { get; }
+    int INode { get; }
+}
+
+public readonly struct UnixService : INetService
+{
+    public NetServiceType Type => NetServiceType.Unix;
     public string? Path { get; }
     public NetServiceState State { get; }
     public int INode { get; }
 
-    private NetService(NetServiceType type, in NetEndPoint localEndPoint, in NetEndPoint remoteEndPoint, string? path, NetServiceState state, int iNode)
+    private UnixService(string? path, NetServiceState state, int iNode)
+    {
+        Path = path;
+        State = state;
+        INode = iNode;
+    }
+
+    public override string ToString() => $"{Type} {Path} {State}/{(int)State} {INode}";
+
+    internal static IEnumerable<UnixService> GetAll(string netPath)
+    {
+        using var statReader = new AsciiFileReader(System.IO.Path.Combine(netPath, "unix"), 256);
+        statReader.SkipLine();
+        while (!statReader.EndOfStream)
+        {
+            statReader.SkipWhiteSpaces();
+            statReader.SkipWord();
+            statReader.SkipWord();
+            statReader.SkipWord();
+            statReader.SkipWord();
+            statReader.SkipWord();
+            var state = (NetServiceState)statReader.ReadInt16('x');
+            var iNode = statReader.ReadInt32();
+            var path = statReader.EndOfStream ? null : statReader.ReadStringWord();
+            yield return new UnixService(path, state, iNode);
+            statReader.SkipLine();
+        }
+    }
+}
+
+public readonly struct NetService<TAddress> : INetService
+    where TAddress : unmanaged, IIPAddress<TAddress>
+{
+    public NetServiceType Type { get; }
+    public NetEndPoint<TAddress> LocalEndPoint { get; }
+    public NetEndPoint<TAddress> RemoteEndPoint { get; }
+    public NetServiceState State { get; }
+    public int INode { get; }
+
+    private NetService(NetServiceType type, in NetEndPoint<TAddress> localEndPoint, in NetEndPoint<TAddress> remoteEndPoint, NetServiceState state, int iNode)
     {
         Type = type;
         LocalEndPoint = localEndPoint;
         RemoteEndPoint = remoteEndPoint;
-        Path = path;
         State = state;
         INode = iNode;
     }
@@ -27,24 +71,16 @@ public readonly struct NetService
     {
         var builder = new StringBuilder();
         builder.Append(Type);
-        if (Type == NetServiceType.Unix)
+        if (!LocalEndPoint.IsEmpty)
         {
             builder.Append(' ');
-            builder.Append(Path);
+            builder.Append(LocalEndPoint);
         }
-        else
-        {
-            if (!LocalEndPoint.IsEmpty)
-            {
-                builder.Append(' ');
-                builder.Append(LocalEndPoint);
-            }
 
-            if (!RemoteEndPoint.IsEmpty)
-            {
-                builder.Append(' ');
-                builder.Append(RemoteEndPoint);
-            }
+        if (!RemoteEndPoint.IsEmpty)
+        {
+            builder.Append(' ');
+            builder.Append(RemoteEndPoint);
         }
         builder.Append(CultureInfo.InvariantCulture, $" {State}/{(int)State} {INode}");
         return builder.ToString();
@@ -54,56 +90,38 @@ public readonly struct NetService
     {
         { "tcp", "tcp6" },
         { "udp", "udp6" },
-        { "raw", "raw6" },
-        { "unix", null! }
+        { "raw", "raw6" }
     };
 
-    private static IEnumerable<NetService> GetAll(string netPath, NetServiceType type, NetAddressVersion? addressVersion)
+    private static IEnumerable<NetService<TAddress>> GetAll(string netPath, NetServiceType type)
     {
-        var serviceFile = NetServiceFiles[(int) type, (addressVersion ?? NetAddressVersion.IPv4) == NetAddressVersion.IPv4 ? 0 : 1];
+        var serviceFile = NetServiceFiles[(int) type, TAddress.Version == IPv4.Version ? 0 : 1];
         using var statReader = new AsciiFileReader(System.IO.Path.Combine(netPath, serviceFile), 256);
         statReader.SkipLine();
         while (!statReader.EndOfStream)
         {
             statReader.SkipWhiteSpaces();
             statReader.SkipWord();
-            if (type != NetServiceType.Unix)
-            {
-                var localEndPoint = NetEndPoint.Read(statReader);
-                var remoteEndPoint = NetEndPoint.Read(statReader);
-                var state = (NetServiceState)statReader.ReadInt16('x');
-                        
-                statReader.SkipWord();
-                statReader.SkipWord();
-                statReader.SkipWord();
-                statReader.SkipWord();
-                statReader.SkipWord();
+            var localEndPoint = NetEndPoint<TAddress>.Read(statReader);
+            var remoteEndPoint = NetEndPoint<TAddress>.Read(statReader);
+            var state = (NetServiceState)statReader.ReadInt16('x');
 
-                var iNode = statReader.ReadInt32();
-                        
-                yield return new NetService(type, localEndPoint, remoteEndPoint, null, state, iNode);
-            }
-            else
-            {
-                statReader.SkipWord();
-                statReader.SkipWord();
-                statReader.SkipWord();
-                statReader.SkipWord();
-                var state = (NetServiceState)statReader.ReadInt16('x');
-                var iNode = statReader.ReadInt32();
-                var path = statReader.EndOfStream ? null : statReader.ReadStringWord();
+            statReader.SkipWord();
+            statReader.SkipWord();
+            statReader.SkipWord();
+            statReader.SkipWord();
+            statReader.SkipWord();
 
-                yield return new NetService(type, default, default, path, state, iNode);
-            }
+            var iNode = statReader.ReadInt32();
+
+            yield return new NetService<TAddress>(type, localEndPoint, remoteEndPoint, state, iNode);
             statReader.SkipLine();
         }
     }
 
-    internal static IEnumerable<NetService> GetTcp(string netPath, NetAddressVersion addressVersion) => GetAll(netPath, NetServiceType.Tcp, addressVersion);
+    internal static IEnumerable<NetService<TAddress>> GetTcp(string netPath) => GetAll(netPath, NetServiceType.Tcp);
 
-    internal static IEnumerable<NetService> GetUdp(string netPath, NetAddressVersion addressVersion) => GetAll(netPath, NetServiceType.Udp, addressVersion);
+    internal static IEnumerable<NetService<TAddress>> GetUdp(string netPath) => GetAll(netPath, NetServiceType.Udp);
 
-    internal static IEnumerable<NetService> GetRaw(string netPath, NetAddressVersion addressVersion) => GetAll(netPath, NetServiceType.Raw, addressVersion);
-
-    internal static IEnumerable<NetService> GetUnix(string netPath) => GetAll(netPath, NetServiceType.Unix, null);
+    internal static IEnumerable<NetService<TAddress>> GetRaw(string netPath) => GetAll(netPath, NetServiceType.Raw);
 }
