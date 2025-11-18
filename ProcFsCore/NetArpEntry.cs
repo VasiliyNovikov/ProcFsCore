@@ -1,16 +1,17 @@
 using System.Collections.Generic;
 using System.IO;
+using NetworkingPrimitivesCore;
 
 namespace ProcFsCore;
 
 public readonly struct NetArpEntry
 {
-    public NetAddress Address { get; }
-    public NetHardwareAddress HardwareAddress { get; }
+    public IPv4Address Address { get; }
+    public MACAddress HardwareAddress { get; }
     public string Mask { get; }
     public string Device { get; }
 
-    private NetArpEntry(in NetAddress address, in NetHardwareAddress hardwareAddress, string mask, string device)
+    private NetArpEntry(in IPv4Address address, in MACAddress hardwareAddress, string mask, string device)
     {
         Address = address;
         HardwareAddress = hardwareAddress;
@@ -27,10 +28,10 @@ public readonly struct NetArpEntry
         while (!statReader.EndOfStream)
         {
             statReader.SkipWhiteSpaces();
-            var address = NetAddress.Parse(statReader.ReadWord(), NetAddressFormat.Human);
+            var address = IPv4Address.Parse(statReader.ReadWord());
             statReader.SkipWord();
             statReader.SkipWord();
-            var hardwareAddress = NetHardwareAddress.Parse(statReader.ReadWord());
+            var hardwareAddress = MACAddress.Parse(statReader.ReadWord());
             var maskBytes = statReader.ReadWord();
             var mask = maskBytes.Length == 1 && maskBytes[0] == '*' ? "*" : maskBytes.ToAsciiString();
             var device = statReader.ReadStringWord();

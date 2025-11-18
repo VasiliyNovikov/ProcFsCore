@@ -35,34 +35,17 @@ public unsafe struct NetAddress
     }
 
     [SkipLocalsInit]
-    internal static NetAddress Parse(ReadOnlySpan<byte> addressString, NetAddressFormat format)
+    internal static NetAddress Parse(ReadOnlySpan<byte> addressString)
     {
-        switch (format)
+        Span<uint> address = stackalloc uint[MaxAddressLength >> 2];
+        var addressLength = addressString.Length >> 3;
+        for (var i = 0; i < addressLength; ++i)
         {
-            case NetAddressFormat.Hex:
-            {
-                Span<uint> address = stackalloc uint[MaxAddressLength >> 2];
-                var addressLength = addressString.Length >> 3;
-                for (var i = 0; i < addressLength; ++i)
-                {
-                    var hexPart = addressString.Slice(i << 3, 8);
-                    address[i] = AsciiParser.Parse<uint>(hexPart, 'x');
-                }
-
-                return new NetAddress(MemoryMarshal.Cast<uint, byte>(address[..addressLength]));
-            }
-            case NetAddressFormat.Human:
-            {
-                Span<char> addressStr = stackalloc char[64];
-                var addressStrLen = AsciiExtensions.Encoding.GetChars(addressString, addressStr);
-                var frameworkAddress = IPAddress.Parse(addressStr[..addressStrLen]);
-                Span<byte> addressBytes = stackalloc byte[MaxAddressLength];
-                frameworkAddress.TryWriteBytes(addressBytes, out var addressBytesLen);
-                return new NetAddress(addressBytes[..addressBytesLen]);
-            }
-            default:
-                throw new ArgumentOutOfRangeException(nameof(format), format, null);
+            var hexPart = addressString.Slice(i << 3, 8);
+            address[i] = AsciiParser.Parse<uint>(hexPart, 'x');
         }
+
+        return new NetAddress(MemoryMarshal.Cast<uint, byte>(address[..addressLength]));
     }
 
     public override string ToString() => ((IPAddress)this).ToString();
