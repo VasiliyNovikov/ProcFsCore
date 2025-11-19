@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Globalization;
-using System.Numerics;
 using System.Text;
 using NetworkingPrimitivesCore;
 
@@ -50,17 +49,16 @@ public readonly struct UnixService : INetService
     }
 }
 
-public readonly struct NetService<TAddress, TUInt> : INetService
-    where TAddress : unmanaged, IIPAddress<TAddress, TUInt>
-    where TUInt : unmanaged, IBinaryInteger<TUInt>, IUnsignedNumber<TUInt>
+public readonly struct NetService<TAddress> : INetService
+    where TAddress : unmanaged, IIPAddress<TAddress>
 {
     public NetServiceType Type { get; }
-    public NetEndPoint<TAddress, TUInt> LocalEndPoint { get; }
-    public NetEndPoint<TAddress, TUInt> RemoteEndPoint { get; }
+    public NetEndPoint<TAddress> LocalEndPoint { get; }
+    public NetEndPoint<TAddress> RemoteEndPoint { get; }
     public NetServiceState State { get; }
     public int INode { get; }
 
-    private NetService(NetServiceType type, in NetEndPoint<TAddress, TUInt> localEndPoint, in NetEndPoint<TAddress, TUInt> remoteEndPoint, NetServiceState state, int iNode)
+    private NetService(NetServiceType type, in NetEndPoint<TAddress> localEndPoint, in NetEndPoint<TAddress> remoteEndPoint, NetServiceState state, int iNode)
     {
         Type = type;
         LocalEndPoint = localEndPoint;
@@ -95,7 +93,7 @@ public readonly struct NetService<TAddress, TUInt> : INetService
         { "raw", "raw6" }
     };
 
-    private static IEnumerable<NetService<TAddress, TUInt>> GetAll(string netPath, NetServiceType type)
+    private static IEnumerable<NetService<TAddress>> GetAll(string netPath, NetServiceType type)
     {
         var serviceFile = NetServiceFiles[(int) type, TAddress.Version == IPv4.Version ? 0 : 1];
         using var statReader = new AsciiFileReader(System.IO.Path.Combine(netPath, serviceFile), 256);
@@ -104,8 +102,8 @@ public readonly struct NetService<TAddress, TUInt> : INetService
         {
             statReader.SkipWhiteSpaces();
             statReader.SkipWord();
-            var localEndPoint = NetEndPoint<TAddress, TUInt>.Read(statReader);
-            var remoteEndPoint = NetEndPoint<TAddress, TUInt>.Read(statReader);
+            var localEndPoint = NetEndPoint<TAddress>.Read(statReader);
+            var remoteEndPoint = NetEndPoint<TAddress>.Read(statReader);
             var state = (NetServiceState)statReader.ReadInt16('x');
 
             statReader.SkipWord();
@@ -116,14 +114,14 @@ public readonly struct NetService<TAddress, TUInt> : INetService
 
             var iNode = statReader.ReadInt32();
 
-            yield return new NetService<TAddress, TUInt>(type, localEndPoint, remoteEndPoint, state, iNode);
+            yield return new NetService<TAddress>(type, localEndPoint, remoteEndPoint, state, iNode);
             statReader.SkipLine();
         }
     }
 
-    internal static IEnumerable<NetService<TAddress, TUInt>> GetTcp(string netPath) => GetAll(netPath, NetServiceType.Tcp);
+    internal static IEnumerable<NetService<TAddress>> GetTcp(string netPath) => GetAll(netPath, NetServiceType.Tcp);
 
-    internal static IEnumerable<NetService<TAddress, TUInt>> GetUdp(string netPath) => GetAll(netPath, NetServiceType.Udp);
+    internal static IEnumerable<NetService<TAddress>> GetUdp(string netPath) => GetAll(netPath, NetServiceType.Udp);
 
-    internal static IEnumerable<NetService<TAddress, TUInt>> GetRaw(string netPath) => GetAll(netPath, NetServiceType.Raw);
+    internal static IEnumerable<NetService<TAddress>> GetRaw(string netPath) => GetAll(netPath, NetServiceType.Raw);
 }
