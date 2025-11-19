@@ -7,30 +7,29 @@ using System.Runtime.InteropServices;
 
 namespace ProcFsCore;
 
-internal static class Native
+internal static unsafe partial class Native
 {
     private const string LibC = "libc.so.6";
 
     public static readonly int TicksPerSecond = SystemConfig(SystemConfigName.TicksPerSecond);
 
-    [DllImport(LibC, EntryPoint = "getpid")]
-    public static extern int GetPid();
+    [LibraryImport(LibC, EntryPoint = "gettid")]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static partial int GetTid();
 
-    [DllImport(LibC, EntryPoint = "gettid")]
-    public static extern int GetTid();
-
-    [DllImport(LibC, EntryPoint = "sysconf", SetLastError = true)]
-    private static extern int SystemConfig(SystemConfigName name);
+    [LibraryImport(LibC, EntryPoint = "sysconf", SetLastError = true)]
+    private static partial int SystemConfig(SystemConfigName name);
 
     private enum SystemConfigName
     {
         TicksPerSecond = 2
     }
 
-    [DllImport(LibC, EntryPoint = "readlink", CharSet = CharSet.Ansi, SetLastError = true)]
-    private static extern unsafe IntPtr ReadLink(string path, void* buffer, IntPtr bufferSize);
+    [LibraryImport(LibC, EntryPoint = "readlink", StringMarshalling = StringMarshalling.Utf8, SetLastError = true)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool ReadLink(string path, Span<byte> buffer, out int bytesRead)
+    private static partial IntPtr ReadLink(string path, void* buffer, IntPtr bufferSize);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool ReadLink(string path, Span<byte> buffer, out int bytesRead)
     {
         fixed (void* bufferPtr = &buffer.GetPinnableReference())
         {
@@ -41,8 +40,9 @@ internal static class Native
         }
     }
 
-    [DllImport(LibC, EntryPoint = "open", CharSet = CharSet.Ansi, SetLastError = true)]
-    private static extern int OpenRaw(string path, int flags);
+    [LibraryImport(LibC, EntryPoint = "open", StringMarshalling = StringMarshalling.Utf8, SetLastError = true)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static partial int OpenRaw(string path, int flags);
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int Open(string path, int flags)
     {
@@ -52,8 +52,9 @@ internal static class Native
         return descriptor;
     }
 
-    [DllImport(LibC, EntryPoint = "close", SetLastError = true)]
-    private static extern int CloseRaw(int descriptor);
+    [LibraryImport(LibC, EntryPoint = "close", SetLastError = true)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static partial int CloseRaw(int descriptor);
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Close(int descriptor)
     {
@@ -61,10 +62,11 @@ internal static class Native
             throw new Win32Exception();  
     }
         
-    [DllImport(LibC, EntryPoint = "read", SetLastError = true)]
-    private static extern unsafe IntPtr Read(int descriptor, void* buffer, IntPtr bufferSize);
+    [LibraryImport(LibC, EntryPoint = "read", SetLastError = true)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe int Read(int descriptor, Span<byte> buffer)
+    private static partial IntPtr Read(int descriptor, void* buffer, IntPtr bufferSize);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int Read(int descriptor, Span<byte> buffer)
     {
         fixed (void* bufferPtr = &buffer.GetPinnableReference())
         {
@@ -75,10 +77,11 @@ internal static class Native
         }
     }
 
-    [DllImport(LibC, EntryPoint = "write", SetLastError = true)]
-    private static extern unsafe IntPtr Write(int descriptor, void* buffer, IntPtr bufferSize);
+    [LibraryImport(LibC, EntryPoint = "write", SetLastError = true)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe int Write(int descriptor, ReadOnlySpan<byte> buffer)
+    private static partial IntPtr Write(int descriptor, void* buffer, IntPtr bufferSize);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int Write(int descriptor, ReadOnlySpan<byte> buffer)
     {
         fixed (void* bufferPtr = &buffer.GetPinnableReference())
         {
@@ -89,8 +92,10 @@ internal static class Native
         }
     }
 
-    [DllImport(LibC, EntryPoint = "clock_gettime", SetLastError = true)]
-    private static extern int ClockGetTimeRaw(ClockId clockId, out TimeSpec timeSpec);
+    [LibraryImport(LibC, EntryPoint = "clock_gettime", SetLastError = true)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [SuppressGCTransition]
+    private static partial int ClockGetTimeRaw(ClockId clockId, out TimeSpec timeSpec);
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static long ClockGetTimeNanoseconds(ClockId clockId)
     {

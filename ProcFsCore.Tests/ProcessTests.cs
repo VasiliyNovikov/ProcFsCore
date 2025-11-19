@@ -101,21 +101,17 @@ public class ProcessTests : ProcFsTestsBase
     [TestMethod]
     public void Process_All_Test()
     {
-        Dictionary<int, Process>? pis = null;
-        Dictionary<int, DiagnosticsProcess>? processes = null;
+        Dictionary<int, Process> pis = null!;
+        Dictionary<int, DiagnosticsProcess> processes = null!;
         RetryOnAssert(() =>
         {
             pis = ProcFs.Default.Processes().ToDictionary(pi => pi.Pid);
             processes = DiagnosticsProcess.GetProcesses().ToDictionary(p => p.Id);
             Assert.HasCount(processes.Count, pis);
             CollectionAssert.AreEquivalent(pis.Keys, processes.Keys);
-            
-            foreach (var pi in pis!.Values)
-            {
-                var process = processes![pi.Pid];
-                VerifyProcess(pi, process);
-            }
         });
+        foreach (var pi in pis.Values)
+            VerifyProcess(pi, processes[pi.Pid]);
     }
         
     [TestMethod]
@@ -131,8 +127,8 @@ public class ProcessTests : ProcFsTestsBase
             Assert.IsTrue(links.Any(l => l.Type == LinkType.File && l.Path == fileName));
             Assert.IsTrue(links.Any(l => l.Type == LinkType.Anon));
             Assert.IsTrue(links.Any(l => l.Type == LinkType.Socket));
-            var expectedINode = ProcFs.Default.Net.Services.Udp(NetAddressVersion.IPv4)
-                                                           .Single(s => s.LocalEndPoint.Address.IsEmpty && s.LocalEndPoint.Port == 12345 && s.State == NetServiceState.Closed)
+            var expectedINode = ProcFs.Default.Net.Services.Udp()
+                                                           .Single(s => s.LocalEndPoint.Address == default && s.LocalEndPoint.Port == 12345 && s.State == NetServiceState.Closed)
                                                            .INode;
             Assert.IsTrue(links.Any(l => l.Type == LinkType.Socket && l.INode == expectedINode));
         }
