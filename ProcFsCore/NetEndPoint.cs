@@ -8,8 +8,9 @@ using NetworkingPrimitivesCore;
 
 namespace ProcFsCore;
 
-public readonly struct NetEndPoint<TAddress>
-    where TAddress : unmanaged, IIPAddress<TAddress>
+public readonly struct NetEndPoint<TAddress, TUInt>
+    where TAddress : unmanaged, IIPAddress<TAddress, TUInt>
+    where TUInt : unmanaged, IBinaryInteger<TUInt>, IUnsignedNumber<TUInt>
 {
     private static readonly SearchValues<byte> AddressPortSeparator = SearchValues.Create(":"u8);
 
@@ -24,29 +25,20 @@ public readonly struct NetEndPoint<TAddress>
     }
 
     [SkipLocalsInit]
-    internal static NetEndPoint<TAddress> Read(in AsciiFileReader reader)
+    internal static NetEndPoint<TAddress, TUInt> Read(in AsciiFileReader reader)
     {
         ref var readerRef = ref Unsafe.AsRef(in reader);
-        return new NetEndPoint<TAddress>(FromHexString(readerRef.ReadWord(AddressPortSeparator)), readerRef.ReadInt32('x'));
+        return new NetEndPoint<TAddress, TUInt>(FromHexString(readerRef.ReadWord(AddressPortSeparator)), readerRef.ReadInt32('x'));
     }
 
     private static TAddress FromHexString(ReadOnlySpan<byte> addressHex)
     {
-        return typeof(TAddress) == typeof(IPv4Address)
-            ? (TAddress)(object)FromHexString<IPv4Address, uint>(addressHex)
-            : (TAddress)(object)FromHexString<IPv6Address, UInt128>(addressHex);
-    }
-
-    private static TAddress2 FromHexString<TAddress2, TUInt>(ReadOnlySpan<byte> addressHex)
-        where TAddress2 : unmanaged, IIPAddress<TAddress2, TUInt>
-        where TUInt : unmanaged, IBinaryInteger<TUInt>, IUnsignedNumber<TUInt>
-    {
         return TUInt.TryParse(addressHex, NumberStyles.HexNumber, null, out var addressInt)
-            ? Unsafe.BitCast<TUInt, TAddress2>(addressInt)
+            ? Unsafe.BitCast<TUInt, TAddress>(addressInt)
             : throw new FormatException($"Invalid address format: {addressHex.ToAsciiString()}");
     }
 
     public override string? ToString() => ((IPEndPoint?)this)?.ToString();
 
-    public static implicit operator IPEndPoint(in NetEndPoint<TAddress> endPoint) => new((IPAddress)endPoint.Address, endPoint.Port);
+    public static implicit operator IPEndPoint(in NetEndPoint<TAddress, TUInt> endPoint) => new((IPAddress)endPoint.Address, endPoint.Port);
 }
