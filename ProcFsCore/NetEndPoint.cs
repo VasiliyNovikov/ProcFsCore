@@ -1,10 +1,9 @@
 using System;
 using System.Buffers;
+using System.Globalization;
 using System.Net;
+using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Text.Unicode;
 using NetworkingPrimitivesCore;
 
 namespace ProcFsCore;
@@ -28,15 +27,23 @@ public readonly struct NetEndPoint<TAddress>
     internal static NetEndPoint<TAddress> Read(in AsciiFileReader reader)
     {
         ref var readerRef = ref Unsafe.AsRef(in reader);
-        var addressHex = readerRef.ReadWord(AddressPortSeparator);
-        Span<byte> addressBytes = stackalloc byte[addressHex.Length / 2];
-        if (Convert.FromHexString(addressHex, addressBytes, out _, out _) == OperationStatus.Done)
-        {
-            addressBytes.Reverse();
-            return new NetEndPoint<TAddress>(MemoryMarshal.Read<TAddress>(addressBytes), readerRef.ReadInt32('x'));
+        return new NetEndPoint<TAddress>(FromHexString(readerRef.ReadWord(AddressPortSeparator)), readerRef.ReadInt32('x'));
+    }
 
-        }
-        throw new FormatException($"Invalid address format: {Encoding.ASCII.GetString(addressHex)}");
+    private static TAddress FromHexString(ReadOnlySpan<byte> addressHex)
+    {
+        return typeof(TAddress) == typeof(IPv4Address)
+            ? (TAddress)(object)FromHexString<IPv4Address, uint>(addressHex)
+            : (TAddress)(object)FromHexString<IPv6Address, UInt128>(addressHex);
+    }
+
+    private static TAddress2 FromHexString<TAddress2, TUInt>(ReadOnlySpan<byte> addressHex)
+        where TAddress2 : unmanaged, IIPAddress<TAddress2, TUInt>
+        where TUInt : unmanaged, IBinaryInteger<TUInt>, IUnsignedNumber<TUInt>
+    {
+        return TUInt.TryParse(addressHex, NumberStyles.HexNumber, null, out var addressInt)
+            ? Unsafe.BitCast<TUInt, TAddress2>(addressInt)
+            : throw new FormatException($"Invalid address format: {addressHex.ToAsciiString()}");
     }
 
     public override string? ToString() => ((IPEndPoint?)this)?.ToString();
