@@ -101,21 +101,17 @@ public class ProcessTests : ProcFsTestsBase
     [TestMethod]
     public void Process_All_Test()
     {
-        Dictionary<int, Process>? pis = null;
-        Dictionary<int, DiagnosticsProcess>? processes = null;
+        Dictionary<int, Process> pis = null!;
+        Dictionary<int, DiagnosticsProcess> processes = null!;
         RetryOnAssert(() =>
         {
             pis = ProcFs.Default.Processes().ToDictionary(pi => pi.Pid);
             processes = DiagnosticsProcess.GetProcesses().ToDictionary(p => p.Id);
             Assert.HasCount(processes.Count, pis);
             CollectionAssert.AreEquivalent(pis.Keys, processes.Keys);
-            
-            foreach (var pi in pis!.Values)
-            {
-                var process = processes![pi.Pid];
-                VerifyProcess(pi, process);
-            }
         });
+        foreach (var pi in pis.Values)
+            VerifyProcess(pi, processes[pi.Pid]);
     }
         
     [TestMethod]
